@@ -235,8 +235,8 @@ fn parse_unquoted_value(input: &str) -> IResult<&str, AttributeValue> {
 /// Parse tag names (allowing all alphanumeric + dash/underscore, including uppercase)
 fn parse_tag_name(input: &str) -> IResult<&str, String> {
     (
-        alt((alpha1, tag("_"))),
-        many0(alt((alphanumeric1, tag("-"), tag("_"))))
+        alt((alpha1::<&str, nom::error::Error<&str>>, tag("_"))),
+        many0(alt((alphanumeric1::<&str, nom::error::Error<&str>>, tag("-"), tag("_"))))
     ).map(|(start, rest)| {
         let mut result = start.to_string();
         for part in rest {

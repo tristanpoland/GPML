@@ -23,7 +23,7 @@ pub struct GPMLCanvas {
     /// Hot reload manager
     hot_reload_manager: HotReloadManager,
     /// Error state
-    error: Option<GPMLError>,
+    error: Option<String>,
     /// Loading state
     is_loading: bool,
     /// Runtime variables that can be injected
@@ -69,7 +69,7 @@ impl GPMLCanvas {
                 Ok(())
             }
             Err(e) => {
-                self.error = Some(e.clone());
+                self.error = Some(format!("{}", e));
                 self.is_loading = false;
                 Err(e)
             }

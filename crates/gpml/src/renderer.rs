@@ -259,7 +259,7 @@ impl GPMLRenderer {
             .unwrap_or(false);
 
         let button_id = format!("gpml-button-{}", uuid::Uuid::new_v4());
-        let mut button = button::Button::new(&*button_id)
+        let mut button = button::Button::new(button_id.as_str())
             .label(text_content);
 
         if disabled {
@@ -324,7 +324,7 @@ impl GPMLRenderer {
 
         let checkbox_id = format!("gpml-checkbox-{}", uuid::Uuid::new_v4());
         let mut checkbox = checkbox::Checkbox::new(
-            &*checkbox_id,
+            checkbox_id.as_str(),
         )
         .checked(checked);
 
@@ -362,7 +362,7 @@ impl GPMLRenderer {
 
         let radio_id = format!("gpml-radio-{}", uuid::Uuid::new_v4());
         let radio = radio::Radio::new(
-            &*radio_id,
+            radio_id.as_str(),
         );
 
         if !label_text.is_empty() {
@@ -391,7 +391,7 @@ impl GPMLRenderer {
 
         let switch_id = format!("gpml-switch-{}", uuid::Uuid::new_v4());
         let mut switch = switch::Switch::new(
-            &*switch_id,
+            switch_id.as_str(),
         )
         .checked(checked);
 

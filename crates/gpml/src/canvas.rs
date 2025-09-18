@@ -59,15 +59,18 @@ impl GPMLCanvas {
 
     /// Load the GPML file and all its dependencies
     pub fn load(&mut self) -> GPMLResult<()> {
+        tracing::info!("GPMLCanvas::load called for path: {:?}", self.root_path);
         self.is_loading = true;
         self.error = None;
 
         match self.load_internal() {
             Ok(()) => {
                 self.is_loading = false;
+                tracing::info!("GPML file loaded successfully");
                 Ok(())
             }
             Err(e) => {
+                tracing::error!("Failed to load GPML file: {}", e);
                 self.error = Some(format!("{}", e));
                 self.is_loading = false;
                 Err(e)
@@ -76,29 +79,71 @@ impl GPMLCanvas {
     }
 
     fn load_internal(&mut self) -> GPMLResult<()> {
+        tracing::info!("Loading internal - checking file exists: {:?}", self.root_path);
+        
+        // Check if file exists first
+        if !self.root_path.exists() {
+            let error_msg = format!("File does not exist: {}", self.root_path.display());
+            tracing::error!("{}", error_msg);
+            return Err(GPMLError::FileNotFound {
+                path: self.root_path.display().to_string(),
+            });
+        }
+
         // Load the context with all components and imports
+        tracing::info!("Loading context and resolving components");
         let mut context = self.resolver.load_file(&self.root_path)?;
         
         // Add runtime variables to context
         for (name, value) in &self.runtime_vars {
+            tracing::debug!("Adding runtime variable: {} = {:?}", name, value);
             context.variables.insert(name.clone(), value.clone());
         }
         
         self.context = Some(context);
+        tracing::info!("Context loaded successfully");
 
         // Parse the main document
+        tracing::info!("Reading file content from: {:?}", self.root_path);
         let content = std::fs::read_to_string(&self.root_path)
-            .map_err(|_| GPMLError::FileNotFound {
-                path: self.root_path.display().to_string(),
+            .map_err(|e| {
+                tracing::error!("Failed to read file {}: {}", self.root_path.display(), e);
+                GPMLError::FileNotFound {
+                    path: self.root_path.display().to_string(),
+                }
             })?;
 
+        tracing::info!("File content read, length: {} chars", content.len());
+        tracing::debug!("File content preview: {}", 
+            if content.len() > 200 { 
+                format!("{}...", &content[..200]) 
+            } else { 
+                content.clone() 
+            }
+        );
+
+        tracing::info!("Parsing GPML document");
         let document = GPMLParser::parse_file(&content)
-            .map_err(|e| GPMLError::ParseError { 
-                message: e, 
-                line: 0, 
-                column: 0 
+            .map_err(|e| {
+                tracing::error!("Parse error: {}", e);
+                GPMLError::ParseError { 
+                    message: e, 
+                    line: 0, 
+                    column: 0 
+                }
             })?;
+        
+        tracing::info!("Document parsed successfully");
+        if let GPMLNode::Document { imports, components, root } = &document {
+            tracing::info!("Document structure - imports: {}, components: {}, has_root: {}", 
+                imports.len(), components.len(), root.is_some());
+            if let Some(root_elem) = root {
+                tracing::info!("Root element: tag={}, children={}", root_elem.tag, root_elem.children.len());
+            }
+        }
+        
         self.current_document = Some(document);
+        tracing::info!("Document loaded into canvas successfully");
 
         Ok(())
     }
@@ -235,31 +280,51 @@ impl GPMLCanvas {
 
 impl Render for GPMLCanvas {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        tracing::info!("GPMLCanvas::render called");
+        tracing::info!("Canvas state - loading: {}, error: {:?}, document loaded: {}, context loaded: {}", 
+            self.is_loading, 
+            self.error.as_ref().map(|e| e.as_str()),
+            self.current_document.is_some(),
+            self.context.is_some()
+        );
+
         // Check for hot reload changes
         if let Ok(reloaded) = self.check_and_reload() {
             if reloaded {
+                tracing::info!("Hot reload detected, notifying context");
                 cx.notify();
             }
         }
 
         // Handle different states
         if self.is_loading {
+            tracing::info!("Rendering loading state");
             return self.render_loading_state(window, cx);
         }
 
         if let Some(error) = &self.error {
+            tracing::error!("Rendering error state: {}", error);
             return self.render_error_state(error, window, cx);
         }
 
         if let (Some(root_element), Some(context)) = (self.get_root_element(), &self.context) {
+            tracing::info!("Rendering GPML element: tag={}, children={}", root_element.tag, root_element.children.len());
             match GPMLRenderer::render_element(root_element, context, &self.resolver, cx) {
-                Ok(element) => element,
+                Ok(element) => {
+                    tracing::info!("Successfully rendered GPML element");
+                    element
+                },
                 Err(e) => {
                     tracing::error!("GPML render error: {}", e);
                     self.render_error_state(&format!("{}", e), window, cx)
                 }
             }
         } else {
+            tracing::warn!("No root element or context available - rendering empty state");
+            tracing::debug!("Root element available: {}, Context available: {}", 
+                self.get_root_element().is_some(),
+                self.context.is_some()
+            );
             self.render_empty_state(window, cx)
         }
     }

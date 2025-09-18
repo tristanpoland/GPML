@@ -155,22 +155,33 @@ impl ComponentResolver {
     }
 
     fn process_import(&mut self, import: &Import, context: &mut GPMLContext) -> GPMLResult<()> {
+        tracing::info!("Processing import: {} as {}", import.path, import.alias);
         let import_path = context.base_path.join(&import.path);
+        tracing::debug!("Import resolved to path: {:?}", import_path);
+        
         let imported_doc = self.load_document(&import_path)?;
 
         if let GPMLNode::Document { components, .. } = imported_doc {
+            tracing::info!("Found {} components in imported file", components.len());
             for component in components {
-                // Add imported component with alias prefix if needed
-                let component_name = if import.alias.is_empty() {
-                    component.name.clone()
+                tracing::debug!("Processing component: {}", component.name);
+                
+                // For imports with alias, use the alias as the component name
+                // This allows "import ./Card.gpml as Card" to make <Card> available
+                let component_name = if !import.alias.is_empty() {
+                    import.alias.clone()
                 } else {
-                    format!("{}.{}", import.alias, component.name)
+                    component.name.clone()
                 };
 
                 let mut aliased_component = component.clone();
-                aliased_component.name = component_name;
+                aliased_component.name = component_name.clone();
+                
+                tracing::info!("Adding imported component '{}' to context", component_name);
                 context.add_component(aliased_component);
             }
+        } else {
+            tracing::warn!("Imported file does not contain a document with components");
         }
 
         Ok(())
@@ -254,17 +265,28 @@ pub fn resolve_element(
     context: &GPMLContext,
     resolver: &ComponentResolver,
 ) -> GPMLResult<Element> {
+    tracing::debug!("Resolving element: tag={}", element.tag);
+    
     // Check if this element refers to a custom component
     if let Some(component_def) = context.get_component(&element.tag) {
+        tracing::info!("Found custom component definition for '{}'", element.tag);
+        tracing::debug!("Component has {} parameters: {:?}", component_def.parameters.len(), component_def.parameters);
+        
         // Convert attributes to argument map
         let mut args = HashMap::new();
         for (key, value) in &element.attributes {
-            args.insert(key.clone(), context.interpolate_attribute(value));
+            let interpolated_value = context.interpolate_attribute(value);
+            tracing::debug!("Component arg: {} = {:?}", key, interpolated_value);
+            args.insert(key.clone(), interpolated_value);
         }
 
         // Instantiate the component
+        tracing::info!("Instantiating component '{}'", element.tag);
         resolver.instantiate_component(component_def, &args, context)
     } else {
+        tracing::debug!("Element '{}' is not a custom component, resolving as regular element", element.tag);
+        tracing::debug!("Available components: {:?}", context.components.keys().collect::<Vec<_>>());
+        
         // This is a regular element, just resolve children
         let mut resolved = element.clone();
         let mut resolved_children = Vec::new();

@@ -1,11 +1,12 @@
 use pulsar_engine::*;
 use gpui::*;
 use gpui_component::*;
+use story::*;
 use std::collections::HashMap;
 
 /// Example showing how to use the GPML Canvas component
 fn main() {
-    App::production().run(|cx| {
+    App::new().run(|cx| {
         let options = WindowOptions::default();
         let window = cx.open_window(options, |window, cx| {
             let entity = cx.new(|cx| GPMLExample::new(cx));

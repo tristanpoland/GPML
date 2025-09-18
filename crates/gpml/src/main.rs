@@ -5,29 +5,20 @@ use std::collections::HashMap;
 
 /// Example showing how to use the GPML Canvas component
 fn main() {
-    App::new().run(|cx: &mut AppContext| {
-        cx.open_window(
-            WindowOptions {
-                bounds: WindowBounds::Windowed(Bounds {
-                    origin: point(px(100.0), px(100.0)),
-                    size: size(px(800.0), px(600.0)),
-                }),
-                ..Default::default()
-            },
-            |cx| {
-                cx.new(|cx| GPMLExample::new(cx))
-            },
-        )
-        .unwrap();
+    App::new().run(move |cx: &mut AppContext| {
+        let options = WindowOptions::default();
+        cx.open_window(options, |cx| cx.new_view(|cx| GPMLExample::new(cx)))
+            .unwrap();
     });
 }
 
 struct GPMLExample {
-    canvas: Entity<GPMLCanvas>,
+    canvas: View<GPMLCanvas>,
+    focus_handle: FocusHandle,
 }
 
 impl GPMLExample {
-    fn new(cx: &mut Context<Self>) -> Self {
+    fn new(cx: &mut ViewContext<Self>) -> Self {
         // Create runtime variables
         let mut variables = HashMap::new();
         variables.insert("title".to_string(), AttributeValue::Literal("My App".to_string()));
@@ -41,31 +32,33 @@ impl GPMLExample {
             cx,
         );
 
-        Self { canvas }
+        let focus_handle = cx.focus_handle();
+
+        Self { canvas, focus_handle }
     }
 }
 
 impl Render for GPMLExample {
-    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         v_flex()
             .size_full()
-            .bg(cx.theme().background)
+            .bg(cx.theme().colors.background)
             .child(
                 // Title bar
                 div()
                     .h(px(60.0))
                     .w_full()
-                    .bg(cx.theme().surface)
+                    .bg(cx.theme().colors.elevated_surface_background)
                     .flex()
                     .items_center()
                     .px_4()
                     .border_b_1()
-                    .border_color(cx.theme().border)
+                    .border_color(cx.theme().colors.border)
                     .child(
                         div()
                             .text_xl()
                             .font_weight(FontWeight::SEMIBOLD)
-                            .text_color(cx.theme().foreground)
+                            .text_color(cx.theme().colors.text)
                             .child("GPML Canvas Example")
                     )
             )
@@ -79,8 +72,8 @@ impl Render for GPMLExample {
     }
 }
 
-impl Focusable for GPMLExample {
-    fn focus_handle(&self, cx: &AppContext) -> FocusHandle {
-        self.canvas.read(cx).focus_handle(cx)
+impl FocusableView for GPMLExample {
+    fn focus_handle(&self, _cx: &AppContext) -> FocusHandle {
+        self.focus_handle.clone()
     }
 }

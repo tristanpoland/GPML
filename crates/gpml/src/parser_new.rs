@@ -6,7 +6,7 @@ use nom::{
     character::complete::{char, multispace0, multispace1, alpha1, alphanumeric1},
     combinator::{map, opt, recognize, value},
     multi::{many0, separated_list0},
-    sequence::{pair, terminated, tuple},
+    sequence::{pair, terminated},
     IResult,
 };
 
@@ -79,7 +79,7 @@ fn parse_component_def(input: &str) -> IResult<&str, ComponentDef> {
     let (input, _) = char('(')(input)?;
     let (input, _) = multispace0(input)?;
     let (input, parameters) = separated_list0(
-        tuple((multispace0, char(','), multispace0)),
+        (multispace0, char(','), multispace0),
         parse_identifier,
     )(input)?;
     let (input, _) = multispace0(input)?;
@@ -210,11 +210,11 @@ fn parse_path(input: &str) -> IResult<&str, String> {
 }
 
 fn parse_number(input: &str) -> IResult<&str, f64> {
-    let (input, num_str) = recognize(tuple((
+    let (input, num_str) = recognize((
         opt(char('-')),
         take_while1(|c: char| c.is_ascii_digit()),
-        opt(tuple((char('.'), take_while1(|c: char| c.is_ascii_digit())))),
-    )))(input)?;
+        opt((char('.'), take_while1(|c: char| c.is_ascii_digit()))),
+    ))(input)?;
     
     let number = num_str.parse().map_err(|_| {
         nom::Err::Error(nom::error::Error::new(input, nom::error::ErrorKind::Digit))

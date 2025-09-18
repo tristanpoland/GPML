@@ -227,7 +227,7 @@ impl GPMLCanvas {
 }
 
 impl Render for GPMLCanvas {
-    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         // Check for hot reload changes
         if let Ok(reloaded) = self.check_and_reload() {
             if reloaded {
@@ -259,7 +259,7 @@ impl Render for GPMLCanvas {
 }
 
 impl GPMLCanvas {
-    fn render_loading_state(&self, cx: &mut Context<Self>) -> AnyElement {
+    fn render_loading_state(&self, cx: &mut ViewContext<Self>) -> AnyElement {
         v_flex()
             .items_center()
             .justify_center()
@@ -279,7 +279,7 @@ impl GPMLCanvas {
             .into_any_element()
     }
 
-    fn render_error_state(&self, error: &String, cx: &mut Context<Self>) -> AnyElement {
+    fn render_error_state(&self, error: &String, cx: &mut ViewContext<Self>) -> AnyElement {
         v_flex()
             .items_center()
             .justify_center()
@@ -318,7 +318,7 @@ impl GPMLCanvas {
             .into_any_element()
     }
 
-    fn render_empty_state(&self, cx: &mut Context<Self>) -> AnyElement {
+    fn render_empty_state(&self, cx: &mut ViewContext<Self>) -> AnyElement {
         v_flex()
             .items_center()
             .justify_center()
@@ -342,12 +342,12 @@ impl GPMLCanvas {
 /// Create a GPML canvas view entity
 pub fn create_gpml_canvas<V>(
     root_path: impl AsRef<Path>,
-    cx: &mut Context<V>,
-) -> Entity<GPMLCanvas>
+    cx: &mut ViewContext<V>,
+) -> View<GPMLCanvas>
 where
     V: Render + 'static,
 {
-    cx.new(|_cx| {
+    cx.new_view(|_cx| {
         let mut canvas = GPMLCanvas::new(root_path);
         
         // Try to load the file
@@ -368,12 +368,12 @@ where
 pub fn create_gpml_canvas_with_vars<V>(
     root_path: impl AsRef<Path>,
     variables: HashMap<String, AttributeValue>,
-    cx: &mut Context<V>,
-) -> Entity<GPMLCanvas>
+    cx: &mut ViewContext<V>,
+) -> View<GPMLCanvas>
 where
     V: Render + 'static,
 {
-    cx.new(|_cx| {
+    cx.new_view(|_cx| {
         let mut canvas = GPMLCanvas::new(root_path).with_variables(variables);
         
         if let Err(e) = canvas.load() {

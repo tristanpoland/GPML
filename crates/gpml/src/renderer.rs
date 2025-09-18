@@ -106,7 +106,8 @@ impl GPMLRenderer {
         T: 'static,
     {
         let direction = element.get_attribute("dir")
-            .and_then(|v| v.as_string().as_str().into())
+            .map(|v| v.as_string())
+            .as_deref()
             .unwrap_or("vertical");
             
         let spacing = element.get_attribute("spacing")
@@ -442,7 +443,7 @@ impl GPMLRenderer {
             "globe" => IconName::Globe,
             "star" => IconName::Star,
             "heart" => IconName::Heart,
-            _ => IconName::Circle, // Default fallback
+            _ => IconName::CircleX, // Default fallback
         };
 
         Icon::new(icon_name_enum)

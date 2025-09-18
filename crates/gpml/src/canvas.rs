@@ -325,7 +325,7 @@ impl GPMLCanvas {
             .size_full()
             .gap_4()
             .child(
-                Icon::new(IconName::FileText)
+                Icon::new(IconName::File)
                     .size(px(24.0))
                     .text_color(cx.theme().muted_foreground)
             )

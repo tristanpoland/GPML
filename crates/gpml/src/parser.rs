@@ -272,7 +272,7 @@ fn parse_expression(input: &str) -> IResult<&str, GPMLNode> {
     (
         tag("${"),
         take_until("}"),
-        char('}')
+        char::<&str, nom::error::Error<&str>>('}')
     ).map(|(_, expr, _)| GPMLNode::Expression(expr.trim().to_string())).parse(input)
 }
 

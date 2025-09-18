@@ -23,10 +23,13 @@ impl GPMLParser {
                     many0(terminated(parse_import, multispace0)),
                     many0(terminated(parse_component_def, multispace0)),
                     many0(terminated(parse_export, multispace0)),
-                    alt((
-                        map(preceded(multispace0, parse_element), Some),
-                        map(multispace0, |_| None)
-                    ))
+                    preceded(
+                        multispace0,
+                        alt((
+                            map(parse_element, Some),
+                            map(tag(""), |_| None)
+                        ))
+                    )
                 )
             ),
             |(imports, components, _exports, root)| GPMLNode::Document {
@@ -41,13 +44,14 @@ impl GPMLParser {
     pub fn parse_file(content: &str) -> Result<GPMLNode, String> {
         match Self::parse_document(content) {
             Ok((remaining, document)) => {
-                if remaining.trim().is_empty() {
+                let trimmed_remaining = remaining.trim();
+                if trimmed_remaining.is_empty() {
                     Ok(document)
                 } else {
-                    Err(format!("Unexpected content after parsing: {}", remaining))
+                    Err(format!("Unexpected content after parsing: {}", trimmed_remaining))
                 }
             },
-            Err(e) => Err(format!("Parse error: {}", e))
+            Err(e) => Err(format!("Parse error: {:?}", e))
         }
     }
 }
@@ -356,6 +360,38 @@ mod tests {
     fn test_parse_with_attributes() {
         let input = r#"<button class="primary">Click me</button>"#;
         let result = parse_element(input);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_parse_import() {
+        let input = "import ./Card.gpml as Card";
+        let result = parse_import(input);
+        assert!(result.is_ok());
+        if let Ok((remaining, import)) = result {
+            assert_eq!(import.path, "./Card.gpml");
+            assert_eq!(import.alias, "Card");
+            assert_eq!(remaining, "");
+        }
+    }
+
+    #[test]
+    fn test_parse_document_just_import() {
+        let input = "import ./Card.gpml as Card";
+        let result = GPMLParser::parse_document(input);
+        println!("Document parse result: {:?}", result);
+        assert!(result.is_ok());
+    }
+
+    #[test] 
+    fn test_parse_app_gpml() {
+        let input = r#"import ./Card.gpml as Card
+
+<root>
+    <Card title="Card Title" content="This is the content of the card." />
+</root>"#;
+        let result = GPMLParser::parse_file(input);
+        println!("Parse result: {:?}", result);
         assert!(result.is_ok());
     }
 }

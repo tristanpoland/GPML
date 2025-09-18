@@ -417,14 +417,22 @@ impl GPMLRenderer {
             .and_then(|v| v.as_number())
             .unwrap_or(1.0);
 
-        slider::Slider::new(
-            format!("gpml-slider-{}", uuid::Uuid::new_v4()),
-            value as f32,
-        )
-        .min(min as f32)
-        .max(max as f32)
-        .step(step as f32)
-        .into_any_element()
+        // Placeholder implementation - create a simple div that represents a slider
+        div()
+            .h_8()
+            .w_full()
+            .border_1()
+            .border_color(cx.theme().border)
+            .rounded_full()
+            .bg(cx.theme().secondary)
+            .child(
+                div()
+                    .h_full()
+                    .w(format!("{}%", ((value - min) / (max - min) * 100.0) as i32))
+                    .bg(cx.theme().primary)
+                    .rounded_full()
+            )
+            .into_any_element()
     }
 
     fn render_icon<T>(element: &GPMLElement, cx: &mut Context<T>) -> AnyElement

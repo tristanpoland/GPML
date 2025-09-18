@@ -199,18 +199,18 @@ fn parse_attribute_value(input: &str) -> IResult<&str, AttributeValue> {
 /// Parse double-quoted string value
 fn parse_double_quoted_string(input: &str) -> IResult<&str, AttributeValue> {
     (
-        char('"'),
+        char::<&str, nom::error::Error<&str>>('"'),
         take_until("\""),
-        char('"')
+        char::<&str, nom::error::Error<&str>>('"')
     ).map(|(_, content, _)| AttributeValue::Literal(content.to_string())).parse(input)
 }
 
 /// Parse single-quoted string value  
 fn parse_single_quoted_string(input: &str) -> IResult<&str, AttributeValue> {
     (
-        char('\''),
+        char::<&str, nom::error::Error<&str>>('\''),
         take_until("'"),
-        char('\'')
+        char::<&str, nom::error::Error<&str>>('\'')
     ).map(|(_, content, _)| AttributeValue::Literal(content.to_string())).parse(input)
 }
 

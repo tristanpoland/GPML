@@ -289,13 +289,13 @@ impl GPMLCanvas {
             .child(
                 Icon::new(IconName::TriangleAlert)
                     .size(px(24.0))
-                    .text_color(gpui_red())
+                    .text_color(gpui::red())
             )
             .child(
                 div()
                     .text_size(px(16.0))
                     .font_weight(FontWeight::SEMIBOLD)
-                    .text_color(gpui_red())
+                    .text_color(gpui::red())
                     .child("GPML Error")
             )
             .child(

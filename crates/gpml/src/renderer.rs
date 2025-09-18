@@ -3,6 +3,7 @@ use crate::error::*;
 use crate::component::*;
 use gpui::*;
 use gpui_component::*;
+use gpui_component::scroll::ScrollbarAxis;
 use std::collections::HashMap;
 
 /// GPML renderer that converts GPML AST to GPUI elements
@@ -162,7 +163,21 @@ impl GPMLRenderer {
     {
         let text_content = Self::extract_text_content(element);
         
-        let mut heading = text::headline(level).child(text_content);
+        // Determine font size based on heading level
+        let font_size = match level {
+            HeadingLevel::H1 => px(32.0),
+            HeadingLevel::H2 => px(24.0),
+            HeadingLevel::H3 => px(20.0),
+            HeadingLevel::H4 => px(16.0),
+            HeadingLevel::H5 => px(14.0),
+            HeadingLevel::H6 => px(12.0),
+        };
+        
+        let mut heading = div()
+            .text_size(font_size)
+            .font_weight(FontWeight::BOLD)
+            .text_color(cx.theme().foreground)
+            .child(text_content);
         
         // Apply text styling
         heading = Self::apply_text_styles(heading, element, cx);
@@ -448,7 +463,7 @@ impl GPMLRenderer {
     where
         T: 'static,
     {
-        let mut scroll_el = scroll::ScrollableAxis::Both.scrollable();
+        let mut scroll_el = div().scrollable(ScrollbarAxis::Both);
 
         for child in &element.children {
             if let Ok(child_element) = Self::render_child(child, cx) {
@@ -523,7 +538,7 @@ impl GPMLRenderer {
         styled
     }
 
-    fn apply_flex_styles<T: ParentElement + FlexParent>(flex_el: T, element: &GPMLElement) -> T {
+    fn apply_flex_styles<T: ParentElement>(flex_el: T, element: &GPMLElement) -> T {
         let mut styled = flex_el;
 
         // Justify content
@@ -553,9 +568,10 @@ impl GPMLRenderer {
         styled
     }
 
-    fn apply_text_styles<T>(text_el: T, element: &GPMLElement, cx: &mut Context<impl 'static>) -> T
+    fn apply_text_styles<T, U>(text_el: T, element: &GPMLElement, cx: &mut Context<U>) -> T
     where
         T: Styled,
+        U: 'static,
     {
         let mut styled = text_el;
 

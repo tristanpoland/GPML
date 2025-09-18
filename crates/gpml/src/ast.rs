@@ -146,3 +146,6 @@ impl GPMLNode {
         }
     }
 }
+
+// Type alias for backward compatibility 
+pub type GPMLElement = Element;

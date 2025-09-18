@@ -13,12 +13,12 @@ fn main() {
 }
 
 struct GPMLExample {
-    canvas: View<GPMLCanvas>,
+    canvas: GPMLCanvas,
     focus_handle: FocusHandle,
 }
 
 impl GPMLExample {
-    fn new(cx: &mut ViewContext<Self>) -> Self {
+    fn new(cx: &mut Context<Self>) -> Self {
         // Create runtime variables
         let mut variables = HashMap::new();
         variables.insert("title".to_string(), AttributeValue::Literal("My App".to_string()));

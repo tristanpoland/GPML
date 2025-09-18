@@ -103,7 +103,7 @@ impl ComponentResolver {
 
     fn load_document(&mut self, path: &Path) -> GPMLResult<GPMLNode> {
         // Check for circular dependencies
-        if self.loading.contains(path) {
+        if self.loading.contains(&path.to_path_buf()) {
             return Err(GPMLError::CircularDependency {
                 path: path.display().to_string(),
             });

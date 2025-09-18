@@ -54,8 +54,11 @@ fn parse_import(input: &str) -> IResult<&str, Import> {
         preceded(
             (tag("import"), space0),
             (
-                take_until(" as "),
-                preceded(tag(" as "), parse_identifier)
+                take_while1(|c: char| c != ' ' && c != '\t' && c != '\n' && c != '\r'),
+                preceded(
+                    (space0, tag("as"), space0),
+                    parse_identifier
+                )
             )
         ),
         |(path, alias)| Import {

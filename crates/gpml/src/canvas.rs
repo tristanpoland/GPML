@@ -304,7 +304,7 @@ impl GPMLCanvas {
                     .text_color(cx.theme().muted_foreground)
                     //TODO:.text_wrap()
                     .max_w(px(600.0))
-                    .child(error)
+                    .child(error.clone())
             )
             .child(
                 button::Button::new("reload-button")

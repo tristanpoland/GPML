@@ -5,12 +5,12 @@ use std::collections::HashMap;
 
 /// Example showing how to use the GPML Canvas component
 fn main() {
-    let app = Application::new();
-    
-    app.run(move |cx| {
+    App::production().run(|cx| {
         let options = WindowOptions::default();
-        cx.open_window(options, |cx| cx.new(|cx| GPMLExample::new(cx)))
-            .unwrap();
+        let window = cx.open_window(options, |window, cx| {
+            let entity = cx.new(|cx| GPMLExample::new(cx));
+            entity.into()
+        });
     });
 }
 

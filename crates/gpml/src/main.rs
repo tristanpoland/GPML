@@ -54,7 +54,7 @@ impl GPMLExample {
         let canvas_path = "examples/card-component/App.gpml";
         tracing::info!("Creating GPML canvas with path: {}", canvas_path);
         
-        let canvas = cx.new(|_cx| {
+        let canvas = cx.new(|canvas_cx| {
             let mut canvas = GPMLCanvas::new(canvas_path).with_variables(variables);
             
             // Try to load the file
@@ -66,6 +66,16 @@ impl GPMLExample {
             }
             
             canvas
+        });
+
+        // Start hot reload AFTER the entity is fully created and registered
+        tracing::info!("Canvas entity created, now starting hot reload");
+        canvas.update(cx, |canvas, canvas_cx| {
+            if let Err(e) = canvas.start_hot_reload(canvas_cx) {
+                tracing::error!("Failed to start hot reload: {}", e);
+            } else {
+                tracing::info!("Hot reload started successfully");
+            }
         });
 
         let focus_handle = cx.focus_handle();

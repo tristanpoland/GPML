@@ -3313,6 +3313,7 @@ dependencies = [
  "schemars",
  "serde",
  "serde_json",
+ "smol 2.0.2",
  "thiserror 2.0.16",
  "tokio",
  "tracing",

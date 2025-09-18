@@ -8,6 +8,7 @@ use gpui::*;
 use gpui_component::*;
 use std::path::{Path, PathBuf};
 use std::collections::HashMap;
+use notify::{RecommendedWatcher, Watcher};
 
 /// Main GPML canvas component that loads and renders GPML files dynamically
 pub struct GPMLCanvas {
@@ -27,6 +28,8 @@ pub struct GPMLCanvas {
     is_loading: bool,
     /// Runtime variables that can be injected
     runtime_vars: HashMap<String, AttributeValue>,
+    /// File watcher for hot reload (kept alive for the canvas lifetime)
+    file_watcher: Option<RecommendedWatcher>,
 }
 
 impl GPMLCanvas {
@@ -43,6 +46,7 @@ impl GPMLCanvas {
             error: None,
             is_loading: false,
             runtime_vars: HashMap::new(),
+            file_watcher: None,
         }
     }
 
@@ -149,7 +153,7 @@ impl GPMLCanvas {
     }
 
     /// Start hot reloading for this canvas
-    pub fn start_hot_reload(&mut self) -> GPMLResult<()> {
+    pub fn start_hot_reload(&mut self, cx: &mut Context<Self>) -> GPMLResult<()> {
         tracing::info!("Starting hot reload for path: {:?}", self.root_path);
         
         // Convert to absolute path if needed
@@ -164,14 +168,111 @@ impl GPMLCanvas {
         tracing::info!("Hot reload absolute path: {:?}", absolute_path);
         tracing::info!("File exists: {}", absolute_path.exists());
         
-        self.hot_reload_manager.start_watching(&absolute_path)?;
-        tracing::info!("Hot reload watcher started for file");
-        
-        // Also watch the directory for new files
-        if let Some(parent) = absolute_path.parent() {
-            tracing::info!("Also watching directory: {:?}", parent);
-            self.hot_reload_manager.add_watched_file(parent);
+        // Additional debugging
+        if let Ok(metadata) = std::fs::metadata(&absolute_path) {
+            tracing::info!("File metadata - size: {}, is_file: {}, modified: {:?}", 
+                metadata.len(), metadata.is_file(), metadata.modified());
+        } else {
+            tracing::error!("Failed to get file metadata for: {:?}", absolute_path);
         }
+        
+        // Spawn a background task to watch for file changes with debouncing
+        let (tx, rx) = smol::channel::bounded(10); // Smaller buffer to prevent flooding
+        let watched_file = absolute_path.clone();
+        
+        tracing::info!("Creating file watcher for: {:?}", watched_file);
+        
+        let mut watcher = notify::recommended_watcher(move |res: notify::Result<notify::Event>| {
+            tracing::debug!("File watcher event received: {:?}", res);
+            if let Ok(event) = &res {
+                tracing::debug!("Event kind: {:?}, paths: {:?}", event.kind, event.paths);
+                match event.kind {
+                    // Only watch for meaningful modify events, not all file system events
+                    notify::EventKind::Modify(notify::event::ModifyKind::Data(_)) => {
+                        tracing::info!("Data modification event detected");
+                        for path in &event.paths {
+                            tracing::info!("Checking path: {:?} against watched file: {:?}", path, watched_file);
+                            // Only react to changes to our specific file
+                            if path == &watched_file && path.extension().and_then(|s| s.to_str()) == Some("gpml") {
+                                tracing::info!("GPML file change detected, sending to channel: {:?}", path);
+                                // Use try_send to avoid blocking - if channel is full, skip this event
+                                match tx.try_send(path.clone()) {
+                                    Ok(_) => tracing::info!("File change event sent successfully"),
+                                    Err(e) => tracing::warn!("Failed to send file change event: {:?}", e),
+                                }
+                                break; // Only send once per event
+                            }
+                        }
+                    }
+                    _ => {
+                        tracing::debug!("Ignoring event kind: {:?}", event.kind);
+                    } // Ignore other event types to reduce noise
+                }
+            } else {
+                tracing::error!("File watcher error: {:?}", res);
+            }
+        }).map_err(|e| GPMLError::IoError(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            format!("Failed to create file watcher: {}", e)
+        )))?;
+        
+        use notify::Watcher;
+        // Only watch the specific file, not the directory
+        tracing::info!("Attempting to watch file: {:?}", absolute_path);
+        watcher.watch(&absolute_path, notify::RecursiveMode::NonRecursive).map_err(|e| {
+            tracing::error!("Failed to watch path {:?}: {}", absolute_path, e);
+            GPMLError::IoError(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                format!("Failed to watch path: {}", e)
+            ))
+        })?;
+        
+        // Store the watcher in the struct to keep it alive
+        self.file_watcher = Some(watcher);
+        
+        tracing::info!("File watcher started successfully for: {:?}", absolute_path);
+        
+        cx.spawn(async move |this, mut cx| {
+            tracing::info!("Hot reload background task started");
+            let mut last_reload = std::time::Instant::now();
+            const DEBOUNCE_DURATION: std::time::Duration = std::time::Duration::from_millis(500);
+            
+            while let Ok(changed_path) = rx.recv().await {
+                tracing::info!("Received file change event in background task: {:?}", changed_path);
+                
+                // Debounce: only reload if enough time has passed
+                let now = std::time::Instant::now();
+                if now.duration_since(last_reload) < DEBOUNCE_DURATION {
+                    tracing::info!("Debouncing file change (too recent), skipping reload");
+                    continue;
+                }
+                last_reload = now;
+                
+                tracing::info!("GPML file changed (debounced): {:?}", changed_path);
+                
+                // Update the canvas on the main thread
+                let update_result = this.update(cx, |canvas, cx| {
+                    tracing::info!("Updating canvas after file change");
+                    // Clear resolver cache for changed file
+                    canvas.resolver.remove_from_cache(&changed_path);
+                    
+                    // Reload the canvas
+                    if let Err(e) = canvas.load() {
+                        tracing::error!("Failed to reload after file change: {}", e);
+                    } else {
+                        tracing::info!("Successfully reloaded after file change");
+                    }
+                    
+                    // Notify for re-render
+                    cx.notify();
+                });
+                
+                if let Err(e) = update_result {
+                    tracing::error!("Failed to update canvas: {:?}", e);
+                }
+            }
+            tracing::warn!("Hot reload background task ended (channel closed)");
+        }).detach();
         
         tracing::info!("Hot reload setup complete");
         Ok(())
@@ -305,14 +406,6 @@ impl Render for GPMLCanvas {
             self.context.is_some()
         );
 
-        // Check for hot reload changes
-        if let Ok(reloaded) = self.check_and_reload() {
-            if reloaded {
-                tracing::info!("Hot reload detected, notifying context");
-                cx.notify();
-            }
-        }
-
         // Handle different states
         if self.is_loading {
             tracing::info!("Rendering loading state");
@@ -443,11 +536,6 @@ where
         tracing::error!("Failed to load GPML file: {}", e);
     }
     
-    // Start hot reload
-    if let Err(e) = canvas.start_hot_reload() {
-        tracing::error!("Failed to start hot reload: {}", e);
-    }
-    
     canvas
 }
 
@@ -464,10 +552,6 @@ where
     
     if let Err(e) = canvas.load() {
         tracing::error!("Failed to load GPML file: {}", e);
-    }
-    
-    if let Err(e) = canvas.start_hot_reload() {
-        tracing::error!("Failed to start hot reload: {}", e);
     }
     
     canvas

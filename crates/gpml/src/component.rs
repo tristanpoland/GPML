@@ -204,7 +204,7 @@ impl ComponentResolver {
 
         // Create new context with parameter bindings
         let mut instance_context = context.clone();
-        for (param, arg_name) in component_def.parameters.iter().enumerate() {
+        for (_param, arg_name) in component_def.parameters.iter().enumerate() {
             if let Some(value) = args.get(arg_name) {
                 instance_context.variables.insert(arg_name.clone(), value.clone());
             }

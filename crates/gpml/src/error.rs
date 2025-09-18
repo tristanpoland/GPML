@@ -13,7 +13,7 @@ pub enum GPMLError {
     FileNotFound { path: String },
 
     #[error("IO error: {0}")]
-    IoError(#[from] std::io::Error),
+    IoError(std::io::Error),
 
     #[error("Component '{name}' not found")]
     ComponentNotFound { name: String },

@@ -105,7 +105,8 @@ impl GPMLRenderer {
     where
         T: 'static,
     {
-        let direction = element.get_attribute("dir")
+        let direction_attr = element.get_attribute("dir");
+        let direction = direction_attr
             .map(|v| v.as_string())
             .as_deref()
             .unwrap_or("vertical");
@@ -257,7 +258,8 @@ impl GPMLRenderer {
             .and_then(|v| v.as_bool())
             .unwrap_or(false);
 
-        let mut button = button::Button::new(format!("gpml-button-{}", uuid::Uuid::new_v4()).as_str())
+        let button_id = format!("gpml-button-{}", uuid::Uuid::new_v4());
+        let mut button = button::Button::new(&button_id)
             .label(text_content);
 
         if disabled {
@@ -320,8 +322,9 @@ impl GPMLRenderer {
             .map(|v| v.as_string())
             .unwrap_or_else(|| Self::extract_text_content(element));
 
+        let checkbox_id = format!("gpml-checkbox-{}", uuid::Uuid::new_v4());
         let mut checkbox = checkbox::Checkbox::new(
-            format!("gpml-checkbox-{}", uuid::Uuid::new_v4()).as_str(),
+            &checkbox_id,
         )
         .checked(checked);
 
@@ -357,8 +360,9 @@ impl GPMLRenderer {
             .map(|v| v.as_string())
             .unwrap_or_else(|| Self::extract_text_content(element));
 
+        let radio_id = format!("gpml-radio-{}", uuid::Uuid::new_v4());
         let radio = radio::Radio::new(
-            format!("gpml-radio-{}", uuid::Uuid::new_v4()).as_str(),
+            &radio_id,
         );
 
         if !label_text.is_empty() {
@@ -385,8 +389,9 @@ impl GPMLRenderer {
             .and_then(|v| v.as_bool())
             .unwrap_or(false);
 
+        let switch_id = format!("gpml-switch-{}", uuid::Uuid::new_v4());
         let mut switch = switch::Switch::new(
-            format!("gpml-switch-{}", uuid::Uuid::new_v4()).as_str(),
+            &switch_id,
         )
         .checked(checked);
 
@@ -428,7 +433,7 @@ impl GPMLRenderer {
             .child(
                 div()
                     .h_full()
-                    .w(format!("{}%", ((value - min) / (max - min) * 100.0) as i32))
+                    .w(px(((value - min) / (max - min) * 100.0) as f32))
                     .bg(cx.theme().primary)
                     .rounded_full()
             )

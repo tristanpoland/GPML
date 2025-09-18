@@ -7,6 +7,9 @@ use std::collections::HashMap;
 fn main() {
     let app = Application::new();
     app.run(|cx| {
+        // Initialize GPUI component system and themes
+        gpui_component::init(cx);
+        
         let options = WindowOptions::default();
         let window = cx.open_window(options, |window, cx| {
             let entity = cx.new(|cx| GPMLExample::new(cx));

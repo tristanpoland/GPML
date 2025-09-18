@@ -150,13 +150,30 @@ impl GPMLCanvas {
 
     /// Start hot reloading for this canvas
     pub fn start_hot_reload(&mut self) -> GPMLResult<()> {
-        self.hot_reload_manager.start_watching(&self.root_path)?;
+        tracing::info!("Starting hot reload for path: {:?}", self.root_path);
+        
+        // Convert to absolute path if needed
+        let absolute_path = if self.root_path.is_absolute() {
+            self.root_path.clone()
+        } else {
+            std::env::current_dir()
+                .map_err(|e| GPMLError::IoError(e))?
+                .join(&self.root_path)
+        };
+        
+        tracing::info!("Hot reload absolute path: {:?}", absolute_path);
+        tracing::info!("File exists: {}", absolute_path.exists());
+        
+        self.hot_reload_manager.start_watching(&absolute_path)?;
+        tracing::info!("Hot reload watcher started for file");
         
         // Also watch the directory for new files
-        if let Some(parent) = self.root_path.parent() {
+        if let Some(parent) = absolute_path.parent() {
+            tracing::info!("Also watching directory: {:?}", parent);
             self.hot_reload_manager.add_watched_file(parent);
         }
         
+        tracing::info!("Hot reload setup complete");
         Ok(())
     }
 

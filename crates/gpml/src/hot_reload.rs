@@ -33,8 +33,17 @@ impl HotReloadManager {
     /// Start watching a file or directory for changes
     pub fn start_watching(&mut self, path: impl AsRef<Path>) -> GPMLResult<()> {
         let path = path.as_ref();
+        tracing::info!("HotReloadManager: Starting to watch path: {:?}", path);
+        
+        if !path.exists() {
+            tracing::error!("HotReloadManager: Path does not exist: {:?}", path);
+            return Err(GPMLError::FileNotFound {
+                path: path.display().to_string(),
+            });
+        }
         
         if self.watcher.is_none() {
+            tracing::info!("HotReloadManager: Creating new file watcher");
             let (sender, receiver) = mpsc::channel();
             let mut watcher = notify::recommended_watcher(sender)
                 .map_err(|e| GPMLError::IoError(std::io::Error::new(
@@ -50,7 +59,9 @@ impl HotReloadManager {
 
             self.watcher = Some(watcher);
             self.receiver = Some(receiver);
+            tracing::info!("HotReloadManager: File watcher created and configured");
         } else if let Some(ref mut watcher) = self.watcher {
+            tracing::info!("HotReloadManager: Adding path to existing watcher");
             watcher.watch(path, RecursiveMode::Recursive)
                 .map_err(|e| GPMLError::IoError(std::io::Error::new(
                     std::io::ErrorKind::Other,
@@ -59,6 +70,7 @@ impl HotReloadManager {
         }
 
         self.add_watched_file(path);
+        tracing::info!("HotReloadManager: Now watching {} files total", self.watched_files.len());
         Ok(())
     }
 
@@ -87,15 +99,26 @@ impl HotReloadManager {
 
         if let Some(receiver) = self.receiver.take() {
             // Process all pending events
+            let mut event_count = 0;
             while let Ok(event_result) = receiver.try_recv() {
+                event_count += 1;
                 if let Ok(event) = event_result {
+                    tracing::debug!("HotReloadManager: Received file event: {:?}", event);
                     if let Some(changed_file) = self.process_event(event) {
                         if !changed_files.contains(&changed_file) {
+                            tracing::info!("HotReloadManager: File changed: {:?}", changed_file);
                             changed_files.push(changed_file);
                         }
                     }
+                } else {
+                    tracing::warn!("HotReloadManager: File watcher error: {:?}", event_result);
                 }
             }
+            
+            if event_count > 0 {
+                tracing::debug!("HotReloadManager: Processed {} events, {} files changed", event_count, changed_files.len());
+            }
+            
             // Put the receiver back
             self.receiver = Some(receiver);
         }
@@ -107,28 +130,48 @@ impl HotReloadManager {
         match event.kind {
             EventKind::Modify(_) | EventKind::Create(_) => {
                 for path in event.paths {
+                    tracing::debug!("HotReloadManager: Checking event path: {:?}", path);
                     if self.is_watched_file(&path) && self.should_process_change(&path) {
+                        tracing::info!("HotReloadManager: Processing change for: {:?}", path);
                         self.last_change_times.insert(path.clone(), SystemTime::now());
                         return Some(path);
+                    } else {
+                        tracing::debug!("HotReloadManager: Ignoring change for: {:?} (not watched or too recent)", path);
                     }
                 }
             }
-            _ => {}
+            _ => {
+                tracing::debug!("HotReloadManager: Ignoring event kind: {:?}", event.kind);
+            }
         }
         None
     }
 
     fn is_watched_file(&self, path: &Path) -> bool {
         // Check if this is a GPML file
-        if path.extension().and_then(|s| s.to_str()) != Some("gpml") {
+        let is_gpml = path.extension().and_then(|s| s.to_str()) == Some("gpml");
+        
+        if !is_gpml {
+            tracing::debug!("HotReloadManager: Not a GPML file: {:?}", path);
             return false;
         }
 
         // Check if it's in our watch list or if we're watching its directory
-        self.watched_files.contains(path) || 
-        self.watched_files.iter().any(|watched| {
+        let is_directly_watched = self.watched_files.contains(path);
+        let is_in_watched_dir = self.watched_files.iter().any(|watched| {
             watched.is_dir() && path.starts_with(watched)
-        })
+        });
+        
+        let result = is_directly_watched || is_in_watched_dir;
+        
+        tracing::debug!("HotReloadManager: File {:?} watched: {} (direct: {}, in_dir: {})", 
+            path, result, is_directly_watched, is_in_watched_dir);
+            
+        if result {
+            tracing::debug!("HotReloadManager: Watched files: {:?}", self.watched_files);
+        }
+        
+        result
     }
 
     fn should_process_change(&self, path: &Path) -> bool {

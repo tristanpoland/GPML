@@ -23,13 +23,16 @@ impl GPMLParser {
                     many0(terminated(parse_import, multispace0)),
                     many0(terminated(parse_component_def, multispace0)),
                     many0(terminated(parse_export, multispace0)),
-                    preceded(multispace0, parse_element)
+                    alt((
+                        map(preceded(multispace0, parse_element), Some),
+                        map(multispace0, |_| None)
+                    ))
                 )
             ),
             |(imports, components, _exports, root)| GPMLNode::Document {
                 imports,
                 components,
-                root: Some(root),
+                root,
             }
         ).parse(input)
     }
@@ -69,6 +72,14 @@ fn parse_import(input: &str) -> IResult<&str, Import> {
     ).parse(input)
 }
 
+/// Parse export statement: export ComponentName
+fn parse_export(input: &str) -> IResult<&str, String> {
+    preceded(
+        (tag("export"), space0),
+        parse_identifier
+    ).parse(input)
+}
+
 /// Parse component definition: def ComponentName(param1, param2) { ... }
 fn parse_component_def(input: &str) -> IResult<&str, ComponentDef> {
     map(
@@ -78,12 +89,22 @@ fn parse_component_def(input: &str) -> IResult<&str, ComponentDef> {
                 parse_identifier,
                 delimited(
                     char('('),
-                    many0(preceded(
-                        space0,
-                        terminated(
-                            parse_identifier,
-                            preceded(space0, alt((char(','), char(')'))))
-                        )
+                    alt((
+                        map(
+                            (
+                                preceded(space0, parse_identifier),
+                                many0(preceded(
+                                    (space0, char(','), space0),
+                                    parse_identifier
+                                ))
+                            ),
+                            |(first, mut rest)| {
+                                let mut params = vec![first];
+                                params.append(&mut rest);
+                                params
+                            }
+                        ),
+                        map(space0, |_| vec![])
                     )),
                     char(')')
                 ),
@@ -96,14 +117,10 @@ fn parse_component_def(input: &str) -> IResult<&str, ComponentDef> {
                 )
             )
         ),
-        |(name, mut parameters, body)| {
-            // Clean up parameters list - remove empty strings
-            parameters.retain(|p| !p.is_empty());
-            ComponentDef {
-                name,
-                parameters,
-                body,
-            }
+        |(name, parameters, body)| ComponentDef {
+            name,
+            parameters,
+            body,
         }
     ).parse(input)
 }

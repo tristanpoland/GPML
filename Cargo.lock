@@ -3299,6 +3299,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "gpml"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "flume",
+ "gpui",
+ "gpui-component",
+ "nom 8.0.0",
+ "notify 8.2.0",
+ "quick-xml 0.38.3",
+ "rust-embed",
+ "schemars",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.16",
+ "tokio",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
 name = "gpu-alloc"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6541,27 +6562,6 @@ dependencies = [
  "bitflags 2.9.4",
  "memchr",
  "unicase",
-]
-
-[[package]]
-name = "pulsar_engine"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "flume",
- "gpui",
- "gpui-component",
- "nom 8.0.0",
- "notify 8.2.0",
- "quick-xml 0.38.3",
- "rust-embed",
- "schemars",
- "serde",
- "serde_json",
- "thiserror 2.0.16",
- "tokio",
- "tracing",
- "uuid",
 ]
 
 [[package]]

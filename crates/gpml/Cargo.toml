@@ -1,12 +1,12 @@
 [package]
 edition = "2021"
-name = "pulsar_engine"
+name = "gpml"
 description = "A modern high-performance game engine written in Rust"
 publish = false
 version = "0.1.0"
 
 [[bin]]
-name = "pulsar_engine"
+name = "gpml"
 path = "src/main.rs"
 
 [dependencies]

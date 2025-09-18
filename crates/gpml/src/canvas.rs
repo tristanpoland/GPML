@@ -187,9 +187,10 @@ impl GPMLCanvas {
             if let Ok(event) = &res {
                 tracing::debug!("Event kind: {:?}, paths: {:?}", event.kind, event.paths);
                 match event.kind {
-                    // Only watch for meaningful modify events, not all file system events
-                    notify::EventKind::Modify(notify::event::ModifyKind::Data(_)) => {
-                        tracing::info!("Data modification event detected");
+                    // Accept any modify event that indicates file content change
+                    notify::EventKind::Modify(notify::event::ModifyKind::Data(_)) |
+                    notify::EventKind::Modify(notify::event::ModifyKind::Any) => {
+                        tracing::info!("File modification event detected: {:?}", event.kind);
                         for path in &event.paths {
                             tracing::info!("Checking path: {:?} against watched file: {:?}", path, watched_file);
                             // Only react to changes to our specific file

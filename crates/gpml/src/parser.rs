@@ -22,10 +22,11 @@ impl GPMLParser {
                 (
                     many0(terminated(parse_import, multispace0)),
                     many0(terminated(parse_component_def, multispace0)),
-                    parse_element
+                    many0(terminated(parse_export, multispace0)),
+                    preceded(multispace0, parse_element)
                 )
             ),
-            |(imports, components, root)| GPMLNode::Document {
+            |(imports, components, _exports, root)| GPMLNode::Document {
                 imports,
                 components,
                 root: Some(root),
@@ -79,20 +80,30 @@ fn parse_component_def(input: &str) -> IResult<&str, ComponentDef> {
                     char('('),
                     many0(preceded(
                         space0,
-                        terminated(parse_identifier, preceded(space0, alt((char(','), char(')')))))
+                        terminated(
+                            parse_identifier,
+                            preceded(space0, alt((char(','), char(')'))))
+                        )
                     )),
                     char(')')
                 ),
                 preceded(
                     (space0, char('{')),
-                    terminated(parse_element, preceded(space0, char('}')))
+                    terminated(
+                        parse_element, 
+                        preceded(space0, char('}'))
+                    )
                 )
             )
         ),
-        |(name, parameters, body)| ComponentDef {
-            name,
-            parameters,
-            body,
+        |(name, mut parameters, body)| {
+            // Clean up parameters list - remove empty strings
+            parameters.retain(|p| !p.is_empty());
+            ComponentDef {
+                name,
+                parameters,
+                body,
+            }
         }
     ).parse(input)
 }
@@ -257,13 +268,13 @@ fn parse_unquoted_value(input: &str) -> IResult<&str, AttributeValue> {
     ).parse(input)
 }
 
-/// Parse tag names (alphanumeric with dashes)
+/// Parse tag names (alphanumeric with dashes, allowing uppercase for components)
 fn parse_tag_name(input: &str) -> IResult<&str, String> {
     map(
         recognize(
             pair(
-                alpha1,
-                take_while1(|c: char| c.is_alphanumeric() || c == '-')
+                alt((alpha1, tag("_"))),
+                take_while1(|c: char| c.is_alphanumeric() || c == '-' || c == '_')
             )
         ),
         |s: &str| s.to_string()

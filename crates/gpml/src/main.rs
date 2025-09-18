@@ -4,7 +4,7 @@ use gpui_component::*;
 use std::collections::HashMap;
 
 /// Example showing how to use the GPML Canvas component
-fn main() {~
+fn main() {
     let app = Application::new();
     app.run(|cx| {
         // Initialize GPUI component system and themes

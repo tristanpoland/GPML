@@ -93,7 +93,11 @@ impl GPMLCanvas {
             })?;
 
         let document = GPMLParser::parse_file(&content)
-            .map_err(|e| GPMLError::ParseError { message: e })?;
+            .map_err(|e| GPMLError::ParseError { 
+                message: e, 
+                line: 0, 
+                column: 0 
+            })?;
         self.current_document = Some(document);
 
         Ok(())
@@ -174,8 +178,12 @@ impl GPMLCanvas {
             context.variables.insert(name.clone(), value.clone());
         }
 
-        let mut parser = GPMLParser::new();
-        let document = parser.parse(content)?;
+        let document = GPMLParser::parse_file(content)
+            .map_err(|e| GPMLError::ParseError { 
+                message: e, 
+                line: 0, 
+                column: 0 
+            })?;
 
         // Process imports and components from the document
         self.resolver.clear_cache();

@@ -617,7 +617,7 @@ impl GPMLRenderer {
                         u8::from_str_radix(&color_str[3..5], 16),
                         u8::from_str_radix(&color_str[5..7], 16),
                     ) {
-                        return Some(rgb(r as f32 / 255.0, g as f32 / 255.0, b as f32 / 255.0));
+                        return Some(rgb(r as f32 / 255.0, g as f32 / 255.0, b as f32 / 255.0).into());
                     }
                 }
                 None

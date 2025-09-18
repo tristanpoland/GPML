@@ -302,7 +302,7 @@ impl GPMLCanvas {
                 div()
                     .text_size(px(14.0))
                     .text_color(cx.theme().muted_foreground)
-                    .text_wrap()
+                    //TODO:.text_wrap()
                     .max_w(px(600.0))
                     .child(error.to_string())
             )

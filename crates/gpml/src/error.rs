@@ -1,6 +1,6 @@
 use thiserror::Error;
 
-#[derive(Debug, Error)]
+#[derive(Debug, Error, Clone)]
 pub enum GPMLError {
     #[error("Parse error: {message} at line {line}, column {column}")]
     ParseError {

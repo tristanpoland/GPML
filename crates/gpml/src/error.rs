@@ -1,6 +1,6 @@
 use thiserror::Error;
 
-#[derive(Debug, Error, Clone)]
+#[derive(Debug, Error)]
 pub enum GPMLError {
     #[error("Parse error: {message} at line {line}, column {column}")]
     ParseError {
@@ -13,7 +13,7 @@ pub enum GPMLError {
     FileNotFound { path: String },
 
     #[error("IO error: {0}")]
-    IoError(std::io::Error),
+    IoError(#[from] std::io::Error),
 
     #[error("Component '{name}' not found")]
     ComponentNotFound { name: String },

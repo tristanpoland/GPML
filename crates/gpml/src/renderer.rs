@@ -641,7 +641,8 @@ impl GPMLRenderer {
                         u8::from_str_radix(&color_str[3..5], 16),
                         u8::from_str_radix(&color_str[5..7], 16),
                     ) {
-                        return Some(rgba(r as u8, g as u8, b as u8, 255).into());
+                        let hex_value = (r << 16) | (g << 8) | b;
+                        return Some(rgba(hex_value as u32).into());
                     }
                 }
                 None

@@ -1,0 +1,73 @@
+[workspace]
+members = [
+    "crates/macros",
+    "crates/gpml",
+    "crates/ui",
+    "crates/story",
+    "crates/wef",
+    "crates/wef/tool",
+    "crates/wef/examples/wef-winit",
+    "crates/webview",
+    "crates/webview/examples/wef-example",
+]
+
+default-members = ["crates/story"]
+resolver = "2"
+
+[workspace.dependencies]
+gpui = { git = "https://github.com/zed-industries/zed.git" }
+gpui_macros = { git = "https://github.com/zed-industries/zed.git" }
+rope = { git = "https://github.com/zed-industries/zed.git" }
+reqwest_client = { git = "https://github.com/zed-industries/zed.git" }
+sum_tree = { git = "https://github.com/zed-industries/zed.git" }
+gpui-component = { path = "crates/ui" }
+gpui-component-macros = { path = "crates/macros" }
+story = { path = "crates/story" }
+wef = { path = "crates/wef" }
+
+anyhow = "1"
+log = "0.4"
+serde = { version = "1.0.219", features = ["derive"] }
+serde_repr = "0.1"
+serde_json = "1"
+schemars = "1"
+smallvec = "1"
+rust-i18n = "3"
+raw-window-handle = "0.6.2"
+smol = "1"
+tracing = "0.1.41"
+notify = "7.0.0"
+lsp-types = "0.97.0"
+
+[workspace.dependencies.windows]
+features = ["Wdk", "Wdk_System", "Wdk_System_SystemServices"]
+version = "0.58.0"
+
+[workspace.lints.clippy]
+almost_complete_range = "allow"
+arc_with_non_send_sync = "allow"
+borrowed_box = "allow"
+dbg_macro = "deny"
+let_underscore_future = "allow"
+map_entry = "allow"
+module_inception = "allow"
+non_canonical_partial_ord_impl = "allow"
+reversed_empty_ranges = "allow"
+single_range_in_vec_init = "allow"
+style = { level = "allow", priority = -1 }
+todo = "deny"
+type_complexity = "allow"
+
+[profile.dev]
+codegen-units = 16
+debug = "limited"
+split-debuginfo = "unpacked"
+
+[profile.dev.package]
+resvg = { opt-level = 3 }
+rustybuzz = { opt-level = 3 }
+taffy = { opt-level = 3 }
+ttf-parser = { opt-level = 3 }
+
+[workspace.metadata.typos]
+files.extend-exclude = ["**/fixtures/*"]

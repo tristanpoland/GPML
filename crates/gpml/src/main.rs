@@ -6,7 +6,8 @@ use std::collections::HashMap;
 
 /// Example showing how to use the GPML Canvas component
 fn main() {
-    App::new().run(|cx| {
+    let app = Application::new();
+    app.run(|cx| {
         let options = WindowOptions::default();
         let window = cx.open_window(options, |window, cx| {
             let entity = cx.new(|cx| GPMLExample::new(cx));

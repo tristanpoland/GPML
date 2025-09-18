@@ -39,7 +39,7 @@ impl GPMLExample {
 }
 
 impl Render for GPMLExample {
-    fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
+    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         v_flex()
             .size_full()
             .bg(cx.theme().colors.background)

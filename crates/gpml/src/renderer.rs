@@ -257,8 +257,8 @@ impl GPMLRenderer {
             .and_then(|v| v.as_bool())
             .unwrap_or(false);
 
-        let mut button = button::Button::new(format!("gpml-button-{}", uuid::Uuid::new_v4()))
-            .child(text_content);
+        let mut button = button::Button::new(format!("gpml-button-{}", uuid::Uuid::new_v4()).as_str())
+            .label(text_content);
 
         if disabled {
             button = button.disabled(true);
@@ -279,17 +279,29 @@ impl GPMLRenderer {
             .and_then(|v| v.as_bool())
             .unwrap_or(false);
 
-        let mut input = input::TextInput::new(format!("gpml-input-{}", uuid::Uuid::new_v4()));
+        // Placeholder implementation - creates a styled div that looks like an input
+        let mut input_div = div()
+            .border_1()
+            .border_color(cx.theme().border)
+            .rounded_md()
+            .px_3()
+            .py_2()
+            .bg(cx.theme().background)
+            .text_color(cx.theme().foreground);
 
         if !placeholder.is_empty() {
-            input = input.placeholder(&placeholder);
+            input_div = input_div.child(format!("[{}]", placeholder));
+        } else {
+            input_div = input_div.child("[Input]");
         }
 
         if disabled {
-            input = input.disabled(true);
+            input_div = input_div
+                .opacity(0.5)
+                .text_color(cx.theme().muted_foreground);
         }
 
-        input.into_any_element()
+        input_div.into_any_element()
     }
 
     fn render_checkbox<T>(element: &GPMLElement, cx: &mut Context<T>) -> AnyElement
@@ -309,9 +321,9 @@ impl GPMLRenderer {
             .unwrap_or_else(|| Self::extract_text_content(element));
 
         let mut checkbox = checkbox::Checkbox::new(
-            format!("gpml-checkbox-{}", uuid::Uuid::new_v4()),
-            checked,
-        );
+            format!("gpml-checkbox-{}", uuid::Uuid::new_v4()).as_str(),
+        )
+        .checked(checked);
 
         if disabled {
             checkbox = checkbox.disabled(true);
@@ -346,9 +358,7 @@ impl GPMLRenderer {
             .unwrap_or_else(|| Self::extract_text_content(element));
 
         let radio = radio::Radio::new(
-            format!("gpml-radio-{}", uuid::Uuid::new_v4()),
-            value,
-            selected,
+            format!("gpml-radio-{}", uuid::Uuid::new_v4()).as_str(),
         );
 
         if !label_text.is_empty() {
@@ -376,9 +386,9 @@ impl GPMLRenderer {
             .unwrap_or(false);
 
         let mut switch = switch::Switch::new(
-            format!("gpml-switch-{}", uuid::Uuid::new_v4()),
-            checked,
-        );
+            format!("gpml-switch-{}", uuid::Uuid::new_v4()).as_str(),
+        )
+        .checked(checked);
 
         if disabled {
             switch = switch.disabled(true);

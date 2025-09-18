@@ -55,7 +55,7 @@ impl Render for GPMLExample {
                 div()
                     .h(px(60.0))
                     .w_full()
-                    .bg(cx.theme().colors.elevated_surface_background)
+                    .bg(cx.theme().background)
                     .flex()
                     .items_center()
                     .px_4()
@@ -80,7 +80,7 @@ impl Render for GPMLExample {
 }
 
 impl Focusable for GPMLExample {
-    fn focus_handle(&self, _cx: &AppContext) -> FocusHandle {
+    fn focus_handle(&self, _: &App) -> FocusHandle {
         self.focus_handle.clone()
     }
 }

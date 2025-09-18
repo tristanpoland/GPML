@@ -2,10 +2,10 @@ use crate::ast::*;
 use nom::{
     branch::alt,
     bytes::complete::{tag, take_until, take_while1},
-    character::complete::{alpha1, char, multispace0, space0},
-    combinator::{map, recognize},
-    multi::{many0},
-    sequence::{delimited, pair, preceded, terminated},
+    character::complete::{alpha1, alphanumeric1, char, multispace0, space0, space1},
+    combinator::{map, recognize, opt},
+    multi::{many0, separated_list0},
+    sequence::{preceded, terminated},
     IResult, Parser,
 };
 use std::collections::HashMap;
@@ -16,28 +16,17 @@ pub struct GPMLParser;
 impl GPMLParser {
     /// Parse a complete GPML document
     pub fn parse_document(input: &str) -> IResult<&str, GPMLNode> {
-        map(
-            preceded(
-                multispace0,
-                (
-                    many0(terminated(parse_import, multispace0)),
-                    many0(terminated(parse_component_def, multispace0)),
-                    many0(terminated(parse_export, multispace0)),
-                    preceded(
-                        multispace0,
-                        alt((
-                            map(parse_element, Some),
-                            map(tag(""), |_| None)
-                        ))
-                    )
-                )
-            ),
-            |(imports, components, _exports, root)| GPMLNode::Document {
-                imports,
-                components,
-                root,
-            }
-        ).parse(input)
+        (
+            multispace0,
+            many0((parse_import, multispace0).map(|(import, _)| import)),
+            many0((parse_component_def, multispace0).map(|(comp, _)| comp)),
+            many0((parse_export, multispace0).map(|(export, _)| export)),
+            opt((multispace0, parse_element).map(|(_, elem)| elem))
+        ).map(|(_, imports, components, _exports, root)| GPMLNode::Document {
+            imports,
+            components,
+            root,
+        }).parse(input)
     }
     
     /// Parse a GPML file from string content
@@ -58,78 +47,55 @@ impl GPMLParser {
 
 /// Parse import statement: import ./path.gpml as Name  
 fn parse_import(input: &str) -> IResult<&str, Import> {
-    map(
-        preceded(
-            (tag("import"), space0),
-            (
-                take_while1(|c: char| c != ' ' && c != '\t' && c != '\n' && c != '\r'),
-                preceded(
-                    (space0, tag("as"), space0),
-                    parse_identifier
-                )
-            )
-        ),
-        |(path, alias)| Import {
-            path: path.to_string(),
-            alias,
-        }
-    ).parse(input)
+    (
+        tag("import"),
+        space1,
+        take_while1(|c: char| c != ' ' && c != '\t'),
+        space1,
+        tag("as"),
+        space1,
+        parse_identifier
+    ).map(|(_, _, path, _, _, _, alias)| Import {
+        path: path.to_string(),
+        alias,
+    }).parse(input)
 }
 
 /// Parse export statement: export ComponentName
 fn parse_export(input: &str) -> IResult<&str, String> {
-    preceded(
-        (tag("export"), space0),
-        parse_identifier
-    ).parse(input)
+    (tag("export"), space1, parse_identifier)
+        .map(|(_, _, name)| name)
+        .parse(input)
 }
 
 /// Parse component definition: def ComponentName(param1, param2) { ... }
 fn parse_component_def(input: &str) -> IResult<&str, ComponentDef> {
-    map(
-        preceded(
-            (tag("def"), space0),
-            (
-                parse_identifier,
-                delimited(
-                    char('('),
-                    alt((
-                        map(
-                            (
-                                preceded(space0, parse_identifier),
-                                many0(preceded(
-                                    (space0, char(','), space0),
-                                    parse_identifier
-                                ))
-                            ),
-                            |(first, mut rest)| {
-                                let mut params = vec![first];
-                                params.append(&mut rest);
-                                params
-                            }
-                        ),
-                        map(space0, |_| vec![])
-                    )),
-                    char(')')
-                ),
-                preceded(
-                    (space0, char('{')),
-                    terminated(
-                        parse_element, 
-                        preceded(space0, char('}'))
-                    )
-                )
-            )
+    (
+        tag("def"),
+        space1,
+        parse_identifier,
+        space0,
+        char('('),
+        separated_list0(
+            (space0, char(','), space0).map(|(_, _, _)| ()),
+            parse_identifier
         ),
-        |(name, parameters, body)| ComponentDef {
-            name,
-            parameters,
-            body,
-        }
-    ).parse(input)
+        space0,
+        char(')'),
+        space0,
+        char('{'),
+        multispace0,
+        parse_element,
+        multispace0,
+        char('}')
+    ).map(|(_, _, name, _, _, parameters, _, _, _, _, _, body, _, _)| ComponentDef {
+        name,
+        parameters,
+        body,
+    }).parse(input)
 }
 
-/// Parse a single GPML element or node
+/// Parse a single GPML element
 fn parse_element(input: &str) -> IResult<&str, Element> {
     alt((
         parse_self_closing_element,
@@ -139,105 +105,90 @@ fn parse_element(input: &str) -> IResult<&str, Element> {
 
 /// Parse a self-closing element like <input />
 fn parse_self_closing_element(input: &str) -> IResult<&str, Element> {
-    map(
-        delimited(
-            char('<'),
-            (
-                parse_tag_name,
-                many0(preceded(space0, parse_attribute)),
-                preceded(space0, tag("/"))
-            ),
-            char('>')
-        ),
-        |(tag, attributes, _)| {
-            let mut attr_map = HashMap::new();
-            for (key, value) in attributes {
-                attr_map.insert(key, value);
-            }
-            Element {
-                tag,
-                attributes: attr_map,
-                children: vec![],
-                self_closing: true,
-            }
+    (
+        char('<'),
+        parse_tag_name,
+        many0((space1, parse_attribute).map(|(_, attr)| attr)),
+        space0,
+        tag("/>")
+    ).map(|(_, tag_name, attributes, _, _)| {
+        let mut attr_map = HashMap::new();
+        for (key, value) in attributes {
+            attr_map.insert(key, value);
         }
-    ).parse(input)
+        
+        Element {
+            tag: tag_name,
+            attributes: attr_map,
+            children: vec![],
+            self_closing: true,
+        }
+    }).parse(input)
 }
 
 /// Parse a paired element like <div>content</div>
 fn parse_paired_element(input: &str) -> IResult<&str, Element> {
-    map(
-        (
-            // Opening tag
-            delimited(
-                char('<'),
-                (
-                    parse_tag_name,
-                    many0(preceded(space0, parse_attribute))
-                ),
-                preceded(space0, char('>'))
-            ),
-            // Content between tags
-            many0(parse_node),
-            // Closing tag  
-            delimited(
-                tag("</"),
-                parse_tag_name,
-                preceded(space0, char('>'))
-            )
-        ),
-        |((tag, attributes), children, _closing_tag)| {
-            let mut attr_map = HashMap::new();
-            for (key, value) in attributes {
-                attr_map.insert(key, value);
-            }
-            Element {
-                tag,
-                attributes: attr_map,
-                children,
-                self_closing: false,
-            }
+    (
+        char('<'),
+        parse_tag_name,
+        many0((space1, parse_attribute).map(|(_, attr)| attr)),
+        space0,
+        char('>'),
+        many0(parse_node),
+        tag("</"),
+        parse_tag_name,
+        space0,
+        char('>')
+    ).map(|(_, tag_name, attributes, _, _, children, _, _closing_tag, _, _)| {
+        let mut attr_map = HashMap::new();
+        for (key, value) in attributes {
+            attr_map.insert(key, value);
         }
-    ).parse(input)
+        
+        Element {
+            tag: tag_name,
+            attributes: attr_map,
+            children,
+            self_closing: false,
+        }
+    }).parse(input)
 }
 
 /// Parse any type of node (element, text, expression)
 fn parse_node(input: &str) -> IResult<&str, GPMLNode> {
     alt((
-        map(parse_element, GPMLNode::Element),
-        parse_text_node,
+        parse_element.map(GPMLNode::Element),
         parse_expression,
+        parse_text_node,
     )).parse(input)
 }
 
 /// Parse element attributes like name="value"
 fn parse_attribute(input: &str) -> IResult<&str, (String, AttributeValue)> {
-    map(
-        (
-            parse_attribute_name,
-            preceded(
-                (space0, char('='), space0),
-                parse_attribute_value
-            )
-        ),
-        |(name, value)| (name, value)
-    ).parse(input)
+    (
+        parse_attribute_name,
+        space0,
+        char('='),
+        space0,
+        parse_attribute_value
+    ).map(|(name, _, _, _, value)| (name, value)).parse(input)
 }
 
 /// Parse attribute name (alphanumeric with dashes/underscores)
 fn parse_attribute_name(input: &str) -> IResult<&str, String> {
-    map(
-        recognize(
-            pair(
-                alt((alpha1, tag("_"))),
-                take_while1(|c: char| c.is_alphanumeric() || c == '-' || c == '_')
-            )
-        ),
-        |s: &str| s.to_string()
-    ).parse(input)
+    (
+        alt((alpha1, tag("_"))),
+        many0(alt((alphanumeric1, tag("-"), tag("_"))))
+    ).map(|(start, rest)| {
+        let mut result = start.to_string();
+        for part in rest {
+            result.push_str(part);
+        }
+        result
+    }).parse(input)
 }
 
-/// Parse attribute value (quoted string)
+/// Parse attribute value (quoted string or unquoted)
 fn parse_attribute_value(input: &str) -> IResult<&str, AttributeValue> {
     alt((
         parse_double_quoted_string,
@@ -248,94 +199,82 @@ fn parse_attribute_value(input: &str) -> IResult<&str, AttributeValue> {
 
 /// Parse double-quoted string value
 fn parse_double_quoted_string(input: &str) -> IResult<&str, AttributeValue> {
-    map(
-        delimited(
-            char('"'),
-            take_until("\""),
-            char('"')
-        ),
-        |s: &str| AttributeValue::Literal(s.to_string())
-    ).parse(input)
+    (
+        char('"'),
+        take_until("\""),
+        char('"')
+    ).map(|(_, content, _)| AttributeValue::Literal(content.to_string())).parse(input)
 }
 
 /// Parse single-quoted string value  
 fn parse_single_quoted_string(input: &str) -> IResult<&str, AttributeValue> {
-    map(
-        delimited(
-            char('\''),
-            take_until("'"),
-            char('\'')
-        ),
-        |s: &str| AttributeValue::Literal(s.to_string())
-    ).parse(input)
+    (
+        char('\''),
+        take_until("'"),
+        char('\'')
+    ).map(|(_, content, _)| AttributeValue::Literal(content.to_string())).parse(input)
 }
 
 /// Parse unquoted attribute value
 fn parse_unquoted_value(input: &str) -> IResult<&str, AttributeValue> {
-    map(
-        take_while1(|c: char| c.is_alphanumeric() || c == '-' || c == '_' || c == '.'),
-        |s: &str| {
-            // Try to parse as number first
-            if let Ok(num) = s.parse::<f64>() {
-                AttributeValue::Number(num)
-            } else if s == "true" {
-                AttributeValue::Boolean(true) 
-            } else if s == "false" {
-                AttributeValue::Boolean(false)
-            } else {
-                AttributeValue::Literal(s.to_string())
-            }
+    take_while1(|c: char| {
+        c.is_alphanumeric() || c == '-' || c == '_' || c == '.'
+    }).map(|content: &str| {
+        // Try to parse as number first
+        if let Ok(num) = content.parse::<f64>() {
+            AttributeValue::Number(num)
+        } else if content == "true" {
+            AttributeValue::Boolean(true)
+        } else if content == "false" {
+            AttributeValue::Boolean(false)
+        } else {
+            AttributeValue::Literal(content.to_string())
         }
-    ).parse(input)
+    }).parse(input)
 }
 
-/// Parse tag names (alphanumeric with dashes, allowing uppercase for components)
+/// Parse tag names (allowing all alphanumeric + dash/underscore, including uppercase)
 fn parse_tag_name(input: &str) -> IResult<&str, String> {
-    map(
-        recognize(
-            pair(
-                alt((alpha1, tag("_"))),
-                take_while1(|c: char| c.is_alphanumeric() || c == '-' || c == '_')
-            )
-        ),
-        |s: &str| s.to_string()
-    ).parse(input)
+    (
+        alt((alpha1, tag("_"))),
+        many0(alt((alphanumeric1, tag("-"), tag("_"))))
+    ).map(|(start, rest)| {
+        let mut result = start.to_string();
+        for part in rest {
+            result.push_str(part);
+        }
+        result
+    }).parse(input)
 }
 
-/// Parse identifier (for component names, etc.)
+/// Parse identifier (for component names, variables, etc.)
 fn parse_identifier(input: &str) -> IResult<&str, String> {
-    map(
-        recognize(
-            pair(
-                alpha1,
-                take_while1(|c: char| c.is_alphanumeric() || c == '_')
-            )
-        ),
-        |s: &str| s.to_string()
-    ).parse(input)
+    (
+        alpha1,
+        many0(alt((alphanumeric1, tag("_"))))
+    ).map(|(start, rest)| {
+        let mut result = start.to_string();
+        for part in rest {
+            result.push_str(part);
+        }
+        result
+    }).parse(input)
 }
 
 /// Parse text content between elements
 fn parse_text_node(input: &str) -> IResult<&str, GPMLNode> {
-    map(
-        take_while1(|c: char| c != '<' && c != '$' && c != '\n' && c != '\r'),
-        |text: &str| {
-            let trimmed = text.trim();
-            GPMLNode::Text(trimmed.to_string())
-        }
-    ).parse(input)
+    take_while1(|c: char| c != '<' && c != '$' && !c.is_whitespace())
+        .map(|content: &str| GPMLNode::Text(content.to_string()))
+        .parse(input)
 }
 
 /// Parse expression like ${variable}
 fn parse_expression(input: &str) -> IResult<&str, GPMLNode> {
-    map(
-        delimited(
-            tag("${"),
-            take_until("}"),
-            char('}')
-        ),
-        |expr: &str| GPMLNode::Expression(expr.trim().to_string())
-    ).parse(input)
+    (
+        tag("${"),
+        take_until("}"),
+        char('}')
+    ).map(|(_, expr, _)| GPMLNode::Expression(expr.trim().to_string())).parse(input)
 }
 
 #[cfg(test)]

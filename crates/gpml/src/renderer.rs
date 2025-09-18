@@ -362,7 +362,7 @@ impl GPMLRenderer {
 
         let radio_id = format!("gpml-radio-{}", uuid::Uuid::new_v4());
         let radio = radio::Radio::new(
-            &radio_id,
+            &*radio_id,
         );
 
         if !label_text.is_empty() {

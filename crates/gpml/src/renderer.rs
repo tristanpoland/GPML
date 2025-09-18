@@ -538,7 +538,7 @@ impl GPMLRenderer {
         styled
     }
 
-    fn apply_flex_styles<T: ParentElement>(flex_el: T, element: &GPMLElement) -> T {
+    fn apply_flex_styles<T: ParentElement + Styled>(flex_el: T, element: &GPMLElement) -> T {
         let mut styled = flex_el;
 
         // Justify content
@@ -607,7 +607,7 @@ impl GPMLRenderer {
             "yellow" => Some(gpui::yellow()),
             "black" => Some(gpui::black()),
             "white" => Some(gpui::white()),
-            "gray" | "grey" => Some(gray()),
+            "gray" | "grey" => Some(gray(500)),
             "transparent" => Some(transparent_black()),
             _ => {
                 // Try to parse hex color
@@ -617,7 +617,7 @@ impl GPMLRenderer {
                         u8::from_str_radix(&color_str[3..5], 16),
                         u8::from_str_radix(&color_str[5..7], 16),
                     ) {
-                        return Some(rgb(r as f32 / 255.0, g as f32 / 255.0, b as f32 / 255.0).into());
+                        return Some(rgba(r as u8, g as u8, b as u8, 255).into());
                     }
                 }
                 None

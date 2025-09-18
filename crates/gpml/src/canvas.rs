@@ -373,22 +373,20 @@ where
 pub fn create_gpml_canvas_with_vars<V>(
     root_path: impl AsRef<Path>,
     variables: HashMap<String, AttributeValue>,
-    cx: &mut ViewContext<V>,
-) -> View<GPMLCanvas>
+    cx: &mut Context<V>,
+) -> GPMLCanvas
 where
     V: Render + 'static,
 {
-    cx.new_view(|_cx| {
-        let mut canvas = GPMLCanvas::new(root_path).with_variables(variables);
-        
-        if let Err(e) = canvas.load() {
-            tracing::error!("Failed to load GPML file: {}", e);
-        }
-        
-        if let Err(e) = canvas.start_hot_reload() {
-            tracing::error!("Failed to start hot reload: {}", e);
-        }
-        
-        canvas
-    })
+    let mut canvas = GPMLCanvas::new(root_path).with_variables(variables);
+    
+    if let Err(e) = canvas.load() {
+        tracing::error!("Failed to load GPML file: {}", e);
+    }
+    
+    if let Err(e) = canvas.start_hot_reload() {
+        tracing::error!("Failed to start hot reload: {}", e);
+    }
+    
+    canvas
 }

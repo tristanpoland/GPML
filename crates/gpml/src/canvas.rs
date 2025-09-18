@@ -249,7 +249,7 @@ impl Render for GPMLCanvas {
                 Ok(element) => element,
                 Err(e) => {
                     tracing::error!("GPML render error: {}", e);
-                    self.render_error_state(&e, cx)
+                    self.render_error_state(&format!("{}", e), cx)
                 }
             }
         } else {

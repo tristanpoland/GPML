@@ -316,7 +316,7 @@ impl GPMLCanvas {
             .child(
                 button::Button::new("reload-button")
                     .child("Reload")
-                    .on_click(cx.listener(|canvas, _event, _cx| {
+                    .on_click(cx.listener(|canvas, _event, _window, _cx| {
                         if let Err(e) = canvas.reload() {
                             tracing::error!("Failed to reload GPML: {}", e);
                         }
@@ -349,12 +349,12 @@ impl GPMLCanvas {
 /// Create a GPML canvas view entity
 pub fn create_gpml_canvas<V>(
     root_path: impl AsRef<Path>,
-    cx: &mut Context<V>,
-) -> Entity<GPMLCanvas>
+    cx: &mut ViewContext<V>,
+) -> View<GPMLCanvas>
 where
     V: Render + 'static,
 {
-    cx.new_entity(|_cx| {
+    cx.new_view(|_cx| {
         let mut canvas = GPMLCanvas::new(root_path);
         
         // Try to load the file
@@ -375,12 +375,12 @@ where
 pub fn create_gpml_canvas_with_vars<V>(
     root_path: impl AsRef<Path>,
     variables: HashMap<String, AttributeValue>,
-    cx: &mut Context<V>,
-) -> Entity<GPMLCanvas>
+    cx: &mut ViewContext<V>,
+) -> View<GPMLCanvas>
 where
     V: Render + 'static,
 {
-    cx.new_entity(|_cx| {
+    cx.new_view(|_cx| {
         let mut canvas = GPMLCanvas::new(root_path).with_variables(variables);
         
         if let Err(e) = canvas.load() {

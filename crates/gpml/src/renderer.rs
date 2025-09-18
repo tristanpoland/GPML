@@ -106,8 +106,8 @@ impl GPMLRenderer {
         T: 'static,
     {
         let direction_attr = element.get_attribute("dir");
-        let direction = direction_attr
-            .map(|v| v.as_string())
+        let direction_string = direction_attr.map(|v| v.as_string());
+        let direction = direction_string
             .as_deref()
             .unwrap_or("vertical");
             
@@ -391,7 +391,7 @@ impl GPMLRenderer {
 
         let switch_id = format!("gpml-switch-{}", uuid::Uuid::new_v4());
         let mut switch = switch::Switch::new(
-            &switch_id,
+            &*switch_id,
         )
         .checked(checked);
 

@@ -1,0 +1,8 @@
+<root>
+    <flex dir="horizontal" spacing=10>
+        <button text="Button 1" />
+        <button text="Button 2" />
+        <button text="Button 3" />
+    </flex>
+    <p text="This is a sample text below the buttons." size=16 color="blue" />
+</root>

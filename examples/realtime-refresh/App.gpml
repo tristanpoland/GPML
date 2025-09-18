@@ -1,0 +1,4 @@
+<root>
+    <p text="Edit this text and see changes instantly!" size=18 color="green" />
+    <button text="Try editing me in dev mode!" />
+</root>

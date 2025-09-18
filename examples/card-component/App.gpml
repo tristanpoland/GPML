@@ -1,0 +1,5 @@
+import ./Card.gpml as Card
+
+<root>
+    <Card title="Card Title" content="This is the content of the card." />
+</root>

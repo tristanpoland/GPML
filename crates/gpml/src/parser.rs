@@ -3,9 +3,8 @@ use nom::{
     branch::alt,
     bytes::complete::{tag, take_until, take_while1},
     character::complete::{alpha1, alphanumeric1, char, multispace0, space0, space1},
-    combinator::{map, recognize, opt},
+    combinator::opt,
     multi::{many0, separated_list0},
-    sequence::{preceded, terminated},
     IResult, Parser,
 };
 use std::collections::HashMap;
@@ -177,8 +176,8 @@ fn parse_attribute(input: &str) -> IResult<&str, (String, AttributeValue)> {
 /// Parse attribute name (alphanumeric with dashes/underscores)
 fn parse_attribute_name(input: &str) -> IResult<&str, String> {
     (
-        alt((alpha1, tag("_"))),
-        many0(alt((alphanumeric1, tag("-"), tag("_"))))
+        alt((alpha1::<&str, nom::error::Error<&str>>, tag("_"))),
+        many0(alt((alphanumeric1::<&str, nom::error::Error<&str>>, tag("-"), tag("_"))))
     ).map(|(start, rest)| {
         let mut result = start.to_string();
         for part in rest {

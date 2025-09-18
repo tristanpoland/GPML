@@ -44,9 +44,9 @@ impl GPMLParser {
 
     fn parse_document(&self, input: &str) -> IResult<&str, GPMLNode> {
         let (input, _) = multispace0(input)?;
-        let (input, imports) = many0(terminated(self.parse_import, multispace0))(input)?;
-        let (input, components) = many0(terminated(self.parse_component_def, multispace0))(input)?;
-        let (input, root) = opt(self.parse_element)(input)?;
+        let (input, imports) = many0(terminated(|i| self.parse_import(i), multispace0))(input)?;
+        let (input, components) = many0(terminated(|i| self.parse_component_def(i), multispace0))(input)?;
+        let (input, root) = opt(|i| self.parse_element(i))(input)?;
         let (input, _) = multispace0(input)?;
 
         Ok((
@@ -80,14 +80,14 @@ impl GPMLParser {
         let (input, _) = multispace0(input)?;
         let (input, parameters) = separated_list0(
             tuple((multispace0, char(','), multispace0)),
-            self.parse_identifier,
+            |i| self.parse_identifier(i),
         )(input)?;
         let (input, _) = multispace0(input)?;
         let (input, _) = char(')')(input)?;
         let (input, _) = multispace0(input)?;
         let (input, _) = char('{')(input)?;
         let (input, _) = multispace0(input)?;
-        let (input, body) = self.parse_element(input)?;
+        let (input, body) = (|i| self.parse_element(i))(input)?;
         let (input, _) = multispace0(input)?;
         let (input, _) = char('}')(input)?;
 
@@ -95,14 +95,14 @@ impl GPMLParser {
     }
 
     fn parse_element(&self, input: &str) -> IResult<&str, Element> {
-        alt((self.parse_self_closing_element, self.parse_normal_element))(input)
+        alt((|i| self.parse_self_closing_element(i), |i| self.parse_normal_element(i)))(input)
     }
 
     fn parse_self_closing_element(&self, input: &str) -> IResult<&str, Element> {
         let (input, _) = char('<')(input)?;
-        let (input, tag) = self.parse_identifier(input)?;
+        let (input, tag) = (|i| self.parse_identifier(i))(input)?;
         let (input, _) = multispace0(input)?;
-        let (input, attributes) = many0(terminated(self.parse_attribute, multispace0))(input)?;
+        let (input, attributes) = many0(terminated(|i| self.parse_attribute(i), multispace0))(input)?;
         let (input, _) = multispace0(input)?;
         let (input, _) = tag("/>")(input)?;
 
@@ -117,16 +117,16 @@ impl GPMLParser {
 
     fn parse_normal_element(&self, input: &str) -> IResult<&str, Element> {
         let (input, _) = char('<')(input)?;
-        let (input, tag) = self.parse_identifier(input)?;
+        let (input, tag) = (|i| self.parse_identifier(i))(input)?;
         let (input, _) = multispace0(input)?;
-        let (input, attributes) = many0(terminated(self.parse_attribute, multispace0))(input)?;
+        let (input, attributes) = many0(terminated(|i| self.parse_attribute(i), multispace0))(input)?;
         let (input, _) = multispace0(input)?;
         let (input, _) = char('>')(input)?;
         let (input, _) = multispace0(input)?;
-        let (input, children) = many0(self.parse_node)(input)?;
+        let (input, children) = many0(|i| self.parse_node(i))(input)?;
         let (input, _) = multispace0(input)?;
         let (input, _) = tag("</")(input)?;
-        let (input, closing_tag) = self.parse_identifier(input)?;
+        let (input, closing_tag) = (|i| self.parse_identifier(i))(input)?;
         let (input, _) = char('>')(input)?;
 
         if tag != closing_tag {
@@ -146,30 +146,30 @@ impl GPMLParser {
     }
 
     fn parse_attribute(&self, input: &str) -> IResult<&str, (String, AttributeValue)> {
-        let (input, name) = self.parse_identifier(input)?;
+        let (input, name) = (|i| self.parse_identifier(i))(input)?;
         let (input, _) = multispace0(input)?;
         let (input, _) = char('=')(input)?;
         let (input, _) = multispace0(input)?;
-        let (input, value) = self.parse_attribute_value(input)?;
+        let (input, value) = (|i| self.parse_attribute_value(i))(input)?;
 
         Ok((input, (name, value)))
     }
 
     fn parse_attribute_value(&self, input: &str) -> IResult<&str, AttributeValue> {
         alt((
-            map(self.parse_expression, AttributeValue::Expression),
-            map(self.parse_quoted_string, AttributeValue::Literal),
-            map(self.parse_number, AttributeValue::Number),
-            map(self.parse_boolean, AttributeValue::Boolean),
+            map(|i| self.parse_expression(i), AttributeValue::Expression),
+            map(|i| self.parse_quoted_string(i), AttributeValue::Literal),
+            map(|i| self.parse_number(i), AttributeValue::Number),
+            map(|i| self.parse_boolean(i), AttributeValue::Boolean),
         ))(input)
     }
 
     fn parse_node(&self, input: &str) -> IResult<&str, GPMLNode> {
         let (input, _) = multispace0(input)?;
         alt((
-            map(self.parse_element, GPMLNode::Element),
-            map(self.parse_expression, GPMLNode::Expression),
-            map(self.parse_text, GPMLNode::Text),
+            map(|i| self.parse_element(i), GPMLNode::Element),
+            map(|i| self.parse_expression(i), GPMLNode::Expression),
+            map(|i| self.parse_text(i), GPMLNode::Text),
         ))(input)
     }
 
@@ -194,7 +194,7 @@ impl GPMLParser {
     }
 
     fn parse_string_or_path(&self, input: &str) -> IResult<&str, String> {
-        alt((self.parse_quoted_string, self.parse_path))(input)
+        alt((|i| self.parse_quoted_string(i), |i| self.parse_path(i)))(input)
     }
 
     fn parse_quoted_string(&self, input: &str) -> IResult<&str, String> {

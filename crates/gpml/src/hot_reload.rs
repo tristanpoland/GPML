@@ -85,7 +85,7 @@ impl HotReloadManager {
     pub fn check_for_changes(&mut self) -> Vec<PathBuf> {
         let mut changed_files = Vec::new();
 
-        if let Some(ref receiver) = self.receiver {
+        if let Some(receiver) = self.receiver.take() {
             // Process all pending events
             while let Ok(event_result) = receiver.try_recv() {
                 if let Ok(event) = event_result {
@@ -96,6 +96,8 @@ impl HotReloadManager {
                     }
                 }
             }
+            // Put the receiver back
+            self.receiver = Some(receiver);
         }
 
         changed_files

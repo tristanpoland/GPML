@@ -38,7 +38,34 @@ impl GPMLParser {
     
     /// Parse a GPML file from string content
     pub fn parse_file(content: &str) -> Result<GPMLNode, String> {
-        match Self::parse_document(content) {
+        // Remove HTML-style comments (<!-- ... -->) before parsing so comments
+        // never become text nodes or affect spacing in the rendered output.
+        fn remove_html_comments(s: &str) -> String {
+            let mut out = String::new();
+            let mut start = 0usize;
+            let len = s.len();
+            while start < len {
+                if let Some(idx) = s[start..].find("<!--") {
+                    out.push_str(&s[start..start + idx]);
+                    // find closing --> after the comment start
+                    if let Some(end_idx) = s[start + idx + 4..].find("-->") {
+                        // advance start past the closing "-->"
+                        start = start + idx + 4 + end_idx + 3;
+                        continue;
+                    } else {
+                        // unmatched comment start - stop and append rest
+                        break;
+                    }
+                } else {
+                    out.push_str(&s[start..]);
+                    break;
+                }
+            }
+            out
+        }
+
+        let cleaned = remove_html_comments(content);
+        match Self::parse_document(&cleaned) {
             Ok((remaining, document)) => {
                 let trimmed_remaining = remaining.trim();
                 if trimmed_remaining.is_empty() {

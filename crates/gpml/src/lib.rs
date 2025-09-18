@@ -3,6 +3,7 @@ pub mod component;
 pub mod error;
 pub mod parser;
 pub mod renderer;
+pub mod style;
 pub mod hot_reload;
 pub mod canvas;
 
@@ -12,6 +13,7 @@ pub use component::*;
 pub use error::*;
 pub use parser::*;
 pub use renderer::*;
+pub use style::*;
 pub use hot_reload::*;
 pub use canvas::*;
 

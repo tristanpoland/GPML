@@ -530,62 +530,11 @@ impl GPMLRenderer {
     }
 
     fn apply_common_styles(div_el: Div, element: &GPMLElement) -> Div {
-        let mut styled = div_el;
-
-        // Width and height
-        if let Some(width) = element.get_attribute("width").and_then(|v| v.as_number()) {
-            styled = styled.w(px(width as f32));
-        }
-        if let Some(height) = element.get_attribute("height").and_then(|v| v.as_number()) {
-            styled = styled.h(px(height as f32));
-        }
-
-        // Padding and margin
-        if let Some(padding) = element.get_attribute("padding").and_then(|v| v.as_number()) {
-            styled = styled.p(px(padding as f32));
-        }
-        if let Some(margin) = element.get_attribute("margin").and_then(|v| v.as_number()) {
-            styled = styled.m(px(margin as f32));
-        }
-
-        // Background color
-        if let Some(bg_color) = element.get_attribute("background") {
-            if let Some(color) = Self::parse_color(&bg_color.as_string()) {
-                styled = styled.bg(color);
-            }
-        }
-
-        styled
+        crate::style::Style::apply_common_to_div(div_el, element)
     }
 
     fn apply_flex_styles<T: ParentElement + Styled>(flex_el: T, element: &GPMLElement) -> T {
-        let mut styled = flex_el;
-
-        // Justify content
-        if let Some(justify) = element.get_attribute("justify") {
-            match justify.as_string().as_str() {
-                "start" => styled = styled.justify_start(),
-                "end" => styled = styled.justify_end(),
-                "center" => styled = styled.justify_center(),
-                "between" => styled = styled.justify_between(),
-                "around" => styled = styled.justify_around(),
-                "evenly" => styled = styled.justify_between(),
-                _ => {}
-            }
-        }
-
-        // Align items
-        if let Some(align) = element.get_attribute("align") {
-            match align.as_string().as_str() {
-                "start" => styled = styled.items_start(),
-                "end" => styled = styled.items_end(),
-                "center" => styled = styled.items_center(),
-                "stretch" => styled = styled.items_start(),
-                _ => {}
-            }
-        }
-
-        styled
+        crate::style::Style::apply_flex_to_container(flex_el, element)
     }
 
     fn apply_text_styles<T, U>(text_el: T, element: &GPMLElement, cx: &mut Context<U>) -> T
@@ -593,33 +542,10 @@ impl GPMLRenderer {
         T: Styled,
         U: 'static,
     {
-        let mut styled = text_el;
-
-        // Font size
-        if let Some(size) = element.get_attribute("size").and_then(|v| v.as_number()) {
-            styled = styled.text_size(px(size as f32));
-        }
-
-        // Text color
-        if let Some(color_attr) = element.get_attribute("color") {
-            if let Some(color) = Self::parse_color(&color_attr.as_string()) {
-                styled = styled.text_color(color);
-            }
-        }
-
-        // Font weight
-        if let Some(weight) = element.get_attribute("weight") {
-            match weight.as_string().as_str() {
-                "bold" => styled = styled.font_weight(FontWeight::BOLD),
-                "normal" => styled = styled.font_weight(FontWeight::NORMAL),
-                _ => {}
-            }
-        }
-
-        styled
+        crate::style::Style::apply_text_to(text_el, element, cx)
     }
 
-    fn parse_color(color_str: &str) -> Option<Hsla> {
+    pub(crate) fn parse_color(color_str: &str) -> Option<Hsla> {
         match color_str {
             "red" => Some(gpui::red()),
             "green" => Some(gpui::green()),
@@ -630,21 +556,39 @@ impl GPMLRenderer {
             "gray" | "grey" => Some(gray(500)),
             "transparent" => Some(transparent_black()),
             _ => {
-                // Try to parse hex color
-                if color_str.starts_with('#') && color_str.len() == 7 {
-                    if let (Ok(r), Ok(g), Ok(b)) = (
-                        u8::from_str_radix(&color_str[1..3], 16),
-                        u8::from_str_radix(&color_str[3..5], 16),
-                        u8::from_str_radix(&color_str[5..7], 16),
-                    ) {
-                        let hex_value = ((r as u32) << 16) | ((g as u32) << 8) | (b as u32);
-                        return Some(rgba(hex_value).into());
+                // Try to parse hex color. gpui::rgba expects a u32 in the format 0xRRGGBBAA
+                if color_str.starts_with('#') {
+                    let hex = &color_str[1..];
+                    // Support #RRGGBB and #RRGGBBAA
+                    if hex.len() == 6 {
+                        if let (Ok(r), Ok(g), Ok(b)) = (
+                            u8::from_str_radix(&hex[0..2], 16),
+                            u8::from_str_radix(&hex[2..4], 16),
+                            u8::from_str_radix(&hex[4..6], 16),
+                        ) {
+                            let a: u8 = 0xFF;
+                            let hex_value = ((r as u32) << 24) | ((g as u32) << 16) | ((b as u32) << 8) | (a as u32);
+                            return Some(rgba(hex_value).into());
+                        }
+                    } else if hex.len() == 8 {
+                        if let (Ok(r), Ok(g), Ok(b), Ok(a)) = (
+                            u8::from_str_radix(&hex[0..2], 16),
+                            u8::from_str_radix(&hex[2..4], 16),
+                            u8::from_str_radix(&hex[4..6], 16),
+                            u8::from_str_radix(&hex[6..8], 16),
+                        ) {
+                            let hex_value = ((r as u32) << 24) | ((g as u32) << 16) | ((b as u32) << 8) | (a as u32);
+                            return Some(rgba(hex_value).into());
+                        }
                     }
                 }
                 None
             }
         }
     }
+
+    /// Parse an inline CSS style string into a map of property -> value
+    // parse helpers moved to `style` module
 
     // Placeholder implementations for missing components
     fn render_badge<T>(element: &GPMLElement, cx: &mut Context<T>) -> AnyElement
@@ -665,7 +609,49 @@ impl GPMLRenderer {
     where
         T: 'static,
     {
-        Self::render_div(element, cx)
+        // Try to read src/alt/width/height attributes and construct a gpui image
+        // src is required for meaningful image, fall back to empty div otherwise
+        if let Some(src_attr) = element.get_attribute("src") {
+            let src_str = src_attr.as_string();
+
+            // Convert to ImageSource via Into<ImageSource> by using the img builder directly
+            // Use string clone - img accepts Into<ImageSource>
+            let mut img_el = img(src_str.clone());
+
+            // width/height attributes (numeric)
+            if let Some(w) = element.get_attribute("width").and_then(|v| v.as_number()) {
+                img_el = img_el.w(px(w as f32));
+            }
+            if let Some(h) = element.get_attribute("height").and_then(|v| v.as_number()) {
+                img_el = img_el.h(px(h as f32));
+            }
+
+            // object-fit/style: allow inline style to set object-fit via style attr
+            if let Some(style_attr) = element.get_attribute("style") {
+                let style = crate::style::Style::from_inline(&style_attr.as_string());
+                if let Some(of) = style.get("object-fit") {
+                    match of.as_str() {
+                        "cover" => img_el = img_el.object_fit(ObjectFit::Cover),
+                        "contain" => img_el = img_el.object_fit(ObjectFit::Contain),
+                        _ => {}
+                    }
+                }
+            }
+
+            // Apply common styles (padding/margin/background etc.) by refining into a wrapper div
+            // We will return the image as AnyElement but also allow common props via wrapper if needed
+            // For now apply common styles directly to the image via refine_style when available.
+            // Note: gpui::Image supports Styled API, so we can apply StyleRefinement via refine_style if present.
+
+            // Apply remaining common style props (width/height precedence handled above)
+            // If background specified via attribute/style, try to apply as background on a wrapper div
+            let mut outer = div().child(img_el.into_any_element());
+            outer = Self::apply_common_styles(outer, element);
+            outer.into_any_element()
+        } else {
+            // no src -> fallback to empty div
+            Self::render_div(element, cx)
+        }
     }
 
     fn render_table<T>(element: &GPMLElement, cx: &mut Context<T>) -> AnyElement

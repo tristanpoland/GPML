@@ -2,5 +2,12 @@ import ./Card.gpml as Card
 
 <root>
     <Card title="Card Title 1" content="This is the content of the card." />
+    <Card title="Card Title 2" content="This is the content of the card." />
+
+    <div style="padding: 10px; display: flex; gap: 10px; background-color: #000099; color: #000000;">
+        <Card title="Card Title 3" content="This is the content of the card." />
+        <Card title="Card Title 4" content="This is the content of the card." />
+    </div>
+
+    <image src="https://via.placeholder.com/150" alt="Placeholder Image" />
 </root>
-    

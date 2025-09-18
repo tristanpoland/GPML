@@ -32,7 +32,7 @@ impl GPMLExample {
         variables.insert("button_count".to_string(), AttributeValue::Number(3.0));
 
         // Load the card component example
-        let canvas = cx.new(|cx| {
+        let canvas = cx.new(|_cx| {
             let mut canvas = GPMLCanvas::new("examples/card-component/App.gpml").with_variables(variables);
             
             // Try to load the file

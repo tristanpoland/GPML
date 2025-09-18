@@ -13,7 +13,7 @@ fn main() {
 }
 
 struct GPMLExample {
-    canvas: GPMLCanvas,
+    canvas: Entity<GPMLCanvas>,
     focus_handle: FocusHandle,
 }
 
@@ -26,11 +26,16 @@ impl GPMLExample {
         variables.insert("button_count".to_string(), AttributeValue::Number(3.0));
 
         // Load the card component example
-        let canvas = create_gpml_canvas_with_vars(
-            "examples/card-component/App.gpml",
-            variables,
-            cx,
-        );
+        let canvas = cx.new(|cx| {
+            let mut canvas = GPMLCanvas::new("examples/card-component/App.gpml").with_variables(variables);
+            
+            // Try to load the file
+            if let Err(e) = canvas.load() {
+                tracing::error!("Failed to load GPML file: {}", e);
+            }
+            
+            canvas
+        });
 
         let focus_handle = cx.focus_handle();
 

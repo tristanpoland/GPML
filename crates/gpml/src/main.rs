@@ -65,7 +65,7 @@ impl Render for GPMLExample {
                         div()
                             .text_xl()
                             .font_weight(FontWeight::SEMIBOLD)
-                            .text_color(cx.theme().colors.text)
+                            .text_color(cx.theme().foreground)
                             .child("GPML Canvas Example")
                     )
             )

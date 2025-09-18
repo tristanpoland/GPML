@@ -349,26 +349,24 @@ impl GPMLCanvas {
 /// Create a GPML canvas view entity
 pub fn create_gpml_canvas<V>(
     root_path: impl AsRef<Path>,
-    cx: &mut ViewContext<V>,
-) -> View<GPMLCanvas>
+    cx: &mut Context<V>,
+) -> GPMLCanvas
 where
     V: Render + 'static,
 {
-    cx.new_view(|_cx| {
-        let mut canvas = GPMLCanvas::new(root_path);
-        
-        // Try to load the file
-        if let Err(e) = canvas.load() {
-            tracing::error!("Failed to load GPML file: {}", e);
-        }
-        
-        // Start hot reload
-        if let Err(e) = canvas.start_hot_reload() {
-            tracing::error!("Failed to start hot reload: {}", e);
-        }
-        
-        canvas
-    })
+    let mut canvas = GPMLCanvas::new(root_path);
+    
+    // Try to load the file
+    if let Err(e) = canvas.load() {
+        tracing::error!("Failed to load GPML file: {}", e);
+    }
+    
+    // Start hot reload
+    if let Err(e) = canvas.start_hot_reload() {
+        tracing::error!("Failed to start hot reload: {}", e);
+    }
+    
+    canvas
 }
 
 /// Create a GPML canvas view with runtime variables

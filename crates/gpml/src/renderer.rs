@@ -259,7 +259,7 @@ impl GPMLRenderer {
             .unwrap_or(false);
 
         let button_id = format!("gpml-button-{}", uuid::Uuid::new_v4());
-        let mut button = button::Button::new(&button_id)
+        let mut button = button::Button::new(&*button_id)
             .label(text_content);
 
         if disabled {
@@ -324,7 +324,7 @@ impl GPMLRenderer {
 
         let checkbox_id = format!("gpml-checkbox-{}", uuid::Uuid::new_v4());
         let mut checkbox = checkbox::Checkbox::new(
-            &checkbox_id,
+            &*checkbox_id,
         )
         .checked(checked);
 

@@ -1,7 +1,6 @@
 use pulsar_engine::*;
 use gpui::*;
 use gpui_component::*;
-use story::*;
 use std::collections::HashMap;
 
 /// Example showing how to use the GPML Canvas component

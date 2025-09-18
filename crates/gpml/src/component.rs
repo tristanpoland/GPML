@@ -122,8 +122,12 @@ impl ComponentResolver {
             path: path.display().to_string(),
         })?;
 
-        let mut parser = GPMLParser::new();
-        let document = parser.parse(&content)?;
+        let document = GPMLParser::parse_file(&content)
+            .map_err(|e| GPMLError::ParseError { 
+                message: e, 
+                line: 0, 
+                column: 0 
+            })?;
 
         // Cache the result
         self.cache.insert(path.to_path_buf(), document.clone());

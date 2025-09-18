@@ -72,7 +72,7 @@ impl Render for GPMLExample {
     }
 }
 
-impl FocusableView for GPMLExample {
+impl Focusable for GPMLExample {
     fn focus_handle(&self, _cx: &AppContext) -> FocusHandle {
         self.focus_handle.clone()
     }

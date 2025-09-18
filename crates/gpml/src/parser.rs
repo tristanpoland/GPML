@@ -249,8 +249,8 @@ fn parse_tag_name(input: &str) -> IResult<&str, String> {
 /// Parse identifier (for component names, variables, etc.)
 fn parse_identifier(input: &str) -> IResult<&str, String> {
     (
-        alpha1,
-        many0(alt((alphanumeric1, tag("_"))))
+        alpha1::<&str, nom::error::Error<&str>>,
+        many0(alt((alphanumeric1::<&str, nom::error::Error<&str>>, tag("_"))))
     ).map(|(start, rest)| {
         let mut result = start.to_string();
         for part in rest {

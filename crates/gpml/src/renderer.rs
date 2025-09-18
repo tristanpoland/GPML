@@ -573,7 +573,7 @@ impl GPMLRenderer {
                 "center" => styled = styled.justify_center(),
                 "between" => styled = styled.justify_between(),
                 "around" => styled = styled.justify_around(),
-                "evenly" => styled = styled.justify_evenly(),
+                "evenly" => styled = styled.justify_between(),
                 _ => {}
             }
         }
@@ -584,7 +584,7 @@ impl GPMLRenderer {
                 "start" => styled = styled.items_start(),
                 "end" => styled = styled.items_end(),
                 "center" => styled = styled.items_center(),
-                "stretch" => styled = styled.items_stretch(),
+                "stretch" => styled = styled.items_start(),
                 _ => {}
             }
         }

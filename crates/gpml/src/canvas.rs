@@ -139,7 +139,7 @@ impl GPMLCanvas {
     }
 
     /// Get the current error if any
-    pub fn get_error(&self) -> Option<&GPMLError> {
+    pub fn get_error(&self) -> Option<&String> {
         self.error.as_ref()
     }
 
@@ -279,7 +279,7 @@ impl GPMLCanvas {
             .into_any_element()
     }
 
-    fn render_error_state(&self, error: &GPMLError, cx: &mut Context<Self>) -> AnyElement {
+    fn render_error_state(&self, error: &String, cx: &mut Context<Self>) -> AnyElement {
         v_flex()
             .items_center()
             .justify_center()

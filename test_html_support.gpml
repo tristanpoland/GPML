@@ -1,0 +1,149 @@
+<article>
+    <header>
+        <h1>GPML HTML Tag Support Test</h1>
+        <nav>
+            <a href="#sections">Sections</a> |
+            <a href="#formatting">Text Formatting</a> |
+            <a href="#lists">Lists</a> |
+            <a href="#tables">Tables</a>
+        </nav>
+    </header>
+
+    <main>
+        <section id="sections">
+            <h2>Semantic Elements</h2>
+            <p>This section demonstrates all the semantic HTML elements now supported in GPML.</p>
+
+            <aside>
+                <p>This is an <strong>aside</strong> element that provides related information.</p>
+            </aside>
+        </section>
+
+        <section id="formatting">
+            <h2>Text Formatting</h2>
+            <p>
+                Here we test all text formatting elements:
+                <strong>bold text</strong>,
+                <em>italic text</em>,
+                <u>underlined text</u>,
+                <s>strikethrough text</s>,
+                <code>inline code</code>,
+                <mark>highlighted text</mark>,
+                <small>small text</small>,
+                <sub>subscript</sub> and <sup>superscript</sup>.
+            </p>
+
+            <pre>
+This is preformatted text
+    with preserved spacing
+        and indentation.
+            </pre>
+
+            <blockquote>
+                <p>This is a blockquote that demonstrates quoted content.</p>
+                <p>It can contain multiple paragraphs and <cite>citations</cite>.</p>
+            </blockquote>
+
+            <p>Inline quotes: <q>Short quoted text</q> work too.</p>
+        </section>
+
+        <section id="lists">
+            <h2>Lists</h2>
+
+            <h3>Unordered List</h3>
+            <ul>
+                <li>First item</li>
+                <li>Second item with <strong>formatting</strong></li>
+                <li>Third item</li>
+            </ul>
+
+            <h3>Ordered List</h3>
+            <ol>
+                <li>First numbered item</li>
+                <li>Second numbered item</li>
+                <li>Third numbered item</li>
+            </ol>
+
+            <h3>Definition List</h3>
+            <dl>
+                <dt>GPML</dt>
+                <dd>A markup language for GUI applications built with GPUI</dd>
+                <dt>HTML</dt>
+                <dd>HyperText Markup Language</dd>
+            </dl>
+        </section>
+
+        <section id="tables">
+            <h2>Tables</h2>
+            <table>
+                <caption>HTML Elements Support Status</caption>
+                <thead>
+                    <tr>
+                        <th>Element</th>
+                        <th>Supported</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>div</td>
+                        <td><strong>Yes</strong></td>
+                        <td>Basic container</td>
+                    </tr>
+                    <tr>
+                        <td>p</td>
+                        <td><strong>Yes</strong></td>
+                        <td>Paragraph element</td>
+                    </tr>
+                    <tr>
+                        <td>span</td>
+                        <td><strong>Yes</strong></td>
+                        <td>Inline container</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section id="media">
+            <h2>Media Elements</h2>
+            <p>Here's an example image:</p>
+            <img src="https://pub.lbkrs.com/files/202503/vEnnmgUM6bo362ya/sdk.svg" alt="Test SVG image" />
+            <p>And a JPG test:</p>
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ2lC1w1fL5_nlCquzpyOBiTAGEEmaEFe3v1A&s" alt="JPG image" />
+
+            <p>And here's a link: <a href="https://example.com">Example Link</a></p>
+        </section>
+
+        <section id="forms">
+            <h2>Form Elements</h2>
+            <form>
+                <fieldset>
+                    <legend>Contact Information</legend>
+                    <p>
+                        <label>Name:</label>
+                        <input type="text" placeholder="Enter your name" />
+                    </p>
+                    <p>
+                        <label>Message:</label>
+                        <textarea rows="4" placeholder="Enter your message"></textarea>
+                    </p>
+                </fieldset>
+            </form>
+        </section>
+
+        <hr />
+
+        <section id="separators">
+            <h2>Line Breaks and Separators</h2>
+            <p>
+                This paragraph has<br />
+                line breaks in it.
+            </p>
+            <p>The horizontal rule above separates sections.</p>
+        </section>
+    </main>
+
+    <footer>
+        <p><small>© 2024 GPML HTML Support Test</small></p>
+    </footer>
+</article>

@@ -27,6 +27,8 @@ nom = "8.0.0"
 notify = "8.2.0"
 smol = "2.0"
 thiserror = "2.0.16"
+story = { path = "../story" }
+reqwest_client.workspace = true
 
 [lints]
 workspace = true

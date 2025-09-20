@@ -1,5 +1,6 @@
 pub mod ast;
 pub mod component;
+pub mod elements;
 pub mod error;
 pub mod parser;
 pub mod renderer;

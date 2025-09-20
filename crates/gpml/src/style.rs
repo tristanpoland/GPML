@@ -40,8 +40,13 @@ impl Style {
     }
 
     /// Apply common style props (width/height/padding/margin/background) to a Div
-    pub fn apply_common_to_div(mut div_el: Div, element: &GPMLElement) -> Div {
-        let mut styled = div_el;
+    pub fn apply_common_to_div(div_el: Div, element: &GPMLElement) -> Div {
+        Self::apply_common_to_styled(div_el, element)
+    }
+
+    /// Apply common style props to any Styled element
+    pub fn apply_common_to_styled<T: Styled>(styled_el: T, element: &GPMLElement) -> T {
+        let mut styled = styled_el;
         let style = element.get_attribute("style").map(|v| Style::from_inline(&v.as_string()));
 
         // Width/Height (attribute precedence)

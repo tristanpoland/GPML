@@ -30,6 +30,10 @@ pub struct GPMLCanvas {
     runtime_vars: HashMap<String, AttributeValue>,
     /// File watcher for hot reload (kept alive for the canvas lifetime)
     file_watcher: Option<RecommendedWatcher>,
+    /// Cached compiled root element (only recompiled when file changes)
+    cached_root_element: Option<GPMLElement>,
+    /// Whether the cache is dirty and needs recompilation
+    cache_dirty: bool,
 }
 
 impl GPMLCanvas {
@@ -47,6 +51,8 @@ impl GPMLCanvas {
             is_loading: false,
             runtime_vars: HashMap::new(),
             file_watcher: None,
+            cached_root_element: None,
+            cache_dirty: true,
         }
     }
 
@@ -66,6 +72,10 @@ impl GPMLCanvas {
         tracing::info!("GPMLCanvas::load called for path: {:?}", self.root_path);
         self.is_loading = true;
         self.error = None;
+
+        // Invalidate cache when loading new content
+        self.cache_dirty = true;
+        self.cached_root_element = None;
 
         match self.load_internal() {
             Ok(()) => {
@@ -329,10 +339,43 @@ impl GPMLCanvas {
         }
     }
 
+    /// Get or compile the cached root element (only compiles when cache is dirty)
+    fn get_compiled_root_element(&mut self) -> Option<&GPMLElement> {
+        // Only recompile if cache is dirty
+        if self.cache_dirty {
+            tracing::info!("Cache is dirty, recompiling root element");
+            if let (Some(root_element), Some(context)) = (self.get_root_element(), &self.context) {
+                match resolve_element(root_element, context, &self.resolver) {
+                    Ok(compiled_element) => {
+                        tracing::info!("Successfully compiled root element, caching result");
+                        self.cached_root_element = Some(compiled_element);
+                        self.cache_dirty = false;
+                    }
+                    Err(e) => {
+                        tracing::error!("Failed to compile root element: {}", e);
+                        self.error = Some(format!("Compilation error: {}", e));
+                        return None;
+                    }
+                }
+            } else {
+                tracing::warn!("Cannot compile: missing root element or context");
+                return None;
+            }
+        } else {
+            tracing::debug!("Using cached compiled root element");
+        }
+
+        self.cached_root_element.as_ref()
+    }
+
     /// Load GPML from a string instead of a file
     pub fn load_from_string(&mut self, content: &str, base_path: Option<&Path>) -> GPMLResult<()> {
         self.is_loading = true;
         self.error = None;
+
+        // Invalidate cache when loading new content
+        self.cache_dirty = true;
+        self.cached_root_element = None;
 
         let base_path = base_path.unwrap_or_else(|| Path::new("."));
         let mut context = GPMLContext::new(base_path);
@@ -418,11 +461,13 @@ impl Render for GPMLCanvas {
             return self.render_error_state(error, window, cx);
         }
 
-        if let (Some(root_element), Some(context)) = (self.get_root_element(), &self.context) {
-            tracing::info!("Rendering GPML element: tag={}, children={}", root_element.tag, root_element.children.len());
-            match GPMLRenderer::render_element(root_element, context, &self.resolver, cx) {
+        // Use the cached compiled element instead of re-resolving on every render
+        if let Some(compiled_element) = self.get_compiled_root_element() {
+            tracing::info!("Rendering cached compiled GPML element: tag={}, children={}",
+                compiled_element.tag, compiled_element.children.len());
+            match GPMLRenderer::render_resolved_element_direct(compiled_element, cx) {
                 Ok(element) => {
-                    tracing::info!("Successfully rendered GPML element");
+                    tracing::info!("Successfully rendered cached GPML element");
                     element
                 },
                 Err(e) => {
@@ -431,8 +476,8 @@ impl Render for GPMLCanvas {
                 }
             }
         } else {
-            tracing::warn!("No root element or context available - rendering empty state");
-            tracing::debug!("Root element available: {}, Context available: {}", 
+            tracing::warn!("No compiled element available - rendering empty state");
+            tracing::debug!("Root element available: {}, Context available: {}",
                 self.get_root_element().is_some(),
                 self.context.is_some()
             );

@@ -1,0 +1,100 @@
+<article>
+    <header>
+        <h1>Performance Test Document</h1>
+        <nav>
+            <a href="#section1">Section 1</a> |
+            <a href="#section2">Section 2</a> |
+            <a href="#section3">Section 3</a>
+        </nav>
+    </header>
+
+    <main>
+        <section id="section1">
+            <h2>Complex Content Section</h2>
+            <p>This document contains many <strong>elements</strong> to test <em>performance</em>.</p>
+
+            <div>
+                <ul>
+                    <li>Item with <code>inline code</code></li>
+                    <li>Item with <mark>highlighted text</mark></li>
+                    <li>Item with <small>small text</small></li>
+                    <li>Item with H<sub>2</sub>O and E=mc<sup>2</sup></li>
+                </ul>
+            </div>
+
+            <blockquote>
+                <p>This is a <q>quote within a quote</q> to test nested elements.</p>
+                <cite>- Performance Tester</cite>
+            </blockquote>
+        </section>
+
+        <section id="section2">
+            <h2>Data Tables</h2>
+            <table>
+                <caption>Performance Comparison</caption>
+                <thead>
+                    <tr>
+                        <th>Operation</th>
+                        <th>Before</th>
+                        <th>After</th>
+                        <th>Improvement</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>First Render</td>
+                        <td>Parse + Compile + Render</td>
+                        <td>Parse + Compile + Render</td>
+                        <td><strong>Same</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Subsequent Renders</td>
+                        <td>Parse + Compile + Render</td>
+                        <td><mark>Render Only</mark></td>
+                        <td><strong>Massive</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section id="section3">
+            <h2>Form Elements</h2>
+            <form>
+                <fieldset>
+                    <legend>Test Form</legend>
+                    <p>
+                        <label>Name:</label>
+                        <input type="text" placeholder="Enter name" />
+                    </p>
+                    <p>
+                        <label>Description:</label>
+                        <textarea rows="3" placeholder="Enter description"></textarea>
+                    </p>
+                </fieldset>
+            </form>
+        </section>
+
+        <hr />
+
+        <section>
+            <h2>Nested Elements Test</h2>
+            <div>
+                <div>
+                    <div>
+                        <p>Deeply nested content to test <span>element resolution</span> performance.</p>
+                        <dl>
+                            <dt>Before Optimization</dt>
+                            <dd>Every render call triggered component resolution</dd>
+                            <dt>After Optimization</dt>
+                            <dd>Component resolution happens only when files change</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p><small>© 2024 GPML Performance Test</small></p>
+    </footer>
+</article>

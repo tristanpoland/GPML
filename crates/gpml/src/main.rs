@@ -2,6 +2,7 @@ use gpml::*;
 use gpui::*;
 use gpui_component::*;
 use std::collections::HashMap;
+use story::Assets;
 
 /// Example showing how to use the GPML Canvas component
 fn main() {
@@ -12,13 +13,20 @@ fn main() {
 
     tracing::info!("Starting GPML application");
     
-    let app = Application::new();
+    let app = Application::new().with_assets(Assets);
     app.run(|cx| {
         tracing::info!("Initializing GPUI application context");
         
         // Initialize GPUI component system and themes
         gpui_component::init(cx);
         tracing::info!("GPUI component system initialized");
+
+        // Set up HTTP client for image loading
+        let http_client = std::sync::Arc::new(
+            reqwest_client::ReqwestClient::user_agent("gpml/1.0").unwrap(),
+        );
+        cx.set_http_client(http_client);
+        tracing::info!("HTTP client configured for image loading");
         
         let options = WindowOptions::default();
         tracing::info!("Opening main window");
@@ -51,7 +59,7 @@ impl GPMLExample {
         tracing::info!("Runtime variables created: {:?}", variables);
 
         // Load the card component example
-        let canvas_path = "examples/card-component/App.gpml";
+        let canvas_path = "test_html_support.gpml";
         tracing::info!("Creating GPML canvas with path: {}", canvas_path);
         
         let canvas = cx.new(|canvas_cx| {
@@ -90,6 +98,7 @@ impl Render for GPMLExample {
         v_flex()
             .size_full()
             .bg(cx.theme().colors.background)
+            .scrollable(Axis::Vertical)
             .child(
                 // Title bar
                 div()

@@ -4,7 +4,13 @@
       "Bash(cargo test:*)",
       "Bash(cargo check:*)",
       "Bash(cargo run:*)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(cargo build:*)",
+      "Bash(rustc:*)",
+      "Bash(./test_bundle_verification.exe)",
+      "Bash(./debug_bundle.exe)",
+      "Bash(RUST_LOG=debug cargo run --features bundle)",
+      "Bash(RUST_LOG=info cargo run --features bundle)"
     ],
     "deny": [],
     "ask": []

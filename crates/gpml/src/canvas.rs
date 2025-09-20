@@ -4,6 +4,7 @@ use crate::error::*;
 use crate::hot_reload::*;
 use crate::parser::GPMLParser;
 use crate::renderer::GPMLRenderer;
+use crate::bundled_assets::GPMLFileSource;
 use gpui::*;
 use gpui_component::*;
 use std::path::{Path, PathBuf};
@@ -95,12 +96,13 @@ impl GPMLCanvas {
     fn load_internal(&mut self) -> GPMLResult<()> {
         tracing::info!("Loading internal - checking file exists: {:?}", self.root_path);
         
-        // Check if file exists first
-        if !self.root_path.exists() {
-            let error_msg = format!("File does not exist: {}", self.root_path.display());
+        // Check if file exists in the appropriate source
+        let path_str = self.root_path.display().to_string();
+        if !GPMLFileSource::file_exists(&path_str) {
+            let error_msg = format!("File does not exist: {}", path_str);
             tracing::error!("{}", error_msg);
             return Err(GPMLError::FileNotFound {
-                path: self.root_path.display().to_string(),
+                path: path_str,
             });
         }
 
@@ -119,11 +121,12 @@ impl GPMLCanvas {
 
         // Parse the main document
         tracing::info!("Reading file content from: {:?}", self.root_path);
-        let content = std::fs::read_to_string(&self.root_path)
+        let path_str = self.root_path.display().to_string();
+        let content = GPMLFileSource::load_file(&path_str)
             .map_err(|e| {
-                tracing::error!("Failed to read file {}: {}", self.root_path.display(), e);
+                tracing::error!("Failed to read file {}: {}", path_str, e);
                 GPMLError::FileNotFound {
-                    path: self.root_path.display().to_string(),
+                    path: path_str,
                 }
             })?;
 

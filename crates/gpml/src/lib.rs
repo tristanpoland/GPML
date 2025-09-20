@@ -7,6 +7,7 @@ pub mod renderer;
 pub mod style;
 pub mod hot_reload;
 pub mod canvas;
+pub mod bundled_assets;
 
 // Re-export main types for convenience
 pub use ast::*;
@@ -17,6 +18,7 @@ pub use renderer::*;
 pub use style::*;
 pub use hot_reload::*;
 pub use canvas::*;
+pub use bundled_assets::*;
 
 // Re-export for backward compatibility
 use gpui::*;

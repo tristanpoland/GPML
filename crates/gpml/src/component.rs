@@ -1,9 +1,9 @@
 use crate::ast::*;
 use crate::error::*;
 use crate::parser::GPMLParser;
+use crate::bundled_assets::GPMLFileSource;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::fs;
 
 /// Runtime context for GPML component evaluation
 #[derive(Debug, Clone)]
@@ -86,19 +86,37 @@ impl ComponentResolver {
     /// Load and parse a GPML file with all its dependencies
     pub fn load_file(&mut self, path: impl AsRef<Path>) -> GPMLResult<GPMLContext> {
         let path = path.as_ref();
-        let absolute_path = if path.is_absolute() {
-            path.to_path_buf()
-        } else {
-            std::env::current_dir()?.join(path)
-        };
 
-        self.loading.clear();
-        let document = self.load_document(&absolute_path)?;
-        
-        let mut context = GPMLContext::new(absolute_path.parent().unwrap_or(Path::new(".")));
-        self.process_document(&document, &mut context)?;
-        
-        Ok(context)
+        #[cfg(feature = "bundle")]
+        {
+            // When bundle feature is enabled, use the path as-is for bundle lookup
+            let bundle_path = path.to_path_buf();
+            self.loading.clear();
+            let document = self.load_document(&bundle_path)?;
+
+            // For bundle mode, use the original path for context
+            let mut context = GPMLContext::new(bundle_path.parent().unwrap_or(Path::new(".")));
+            self.process_document(&document, &mut context)?;
+
+            Ok(context)
+        }
+        #[cfg(not(feature = "bundle"))]
+        {
+            // When bundle feature is disabled, use filesystem with absolute paths
+            let absolute_path = if path.is_absolute() {
+                path.to_path_buf()
+            } else {
+                std::env::current_dir()?.join(path)
+            };
+
+            self.loading.clear();
+            let document = self.load_document(&absolute_path)?;
+
+            let mut context = GPMLContext::new(absolute_path.parent().unwrap_or(Path::new(".")));
+            self.process_document(&document, &mut context)?;
+
+            Ok(context)
+        }
     }
 
     fn load_document(&mut self, path: &Path) -> GPMLResult<GPMLNode> {
@@ -117,9 +135,10 @@ impl ComponentResolver {
         // Mark as loading
         self.loading.push(path.to_path_buf());
 
-        // Read and parse the file
-        let content = fs::read_to_string(path).map_err(|_| GPMLError::FileNotFound {
-            path: path.display().to_string(),
+        // Read and parse the file (from bundle or filesystem)
+        let path_str = path.display().to_string();
+        let content = GPMLFileSource::load_file(&path_str).map_err(|_| GPMLError::FileNotFound {
+            path: path_str,
         })?;
 
         let document = GPMLParser::parse_file(&content)
@@ -156,7 +175,19 @@ impl ComponentResolver {
 
     fn process_import(&mut self, import: &Import, context: &mut GPMLContext) -> GPMLResult<()> {
         tracing::info!("Processing import: {} as {}", import.path, import.alias);
-        let import_path = context.base_path.join(&import.path);
+
+        // Resolve import path using the appropriate file source
+        let current_file = context.base_path.display().to_string();
+        let import_path = match GPMLFileSource::resolve_component_import(&current_file, &import.path) {
+            Ok(resolved) => PathBuf::from(resolved),
+            Err(_) => {
+                // If resolution fails, return error immediately (no fallback)
+                return Err(GPMLError::FileNotFound {
+                    path: format!("Unable to resolve import: {}", import.path),
+                });
+            }
+        };
+
         tracing::debug!("Import resolved to path: {:?}", import_path);
         
         let imported_doc = self.load_document(&import_path)?;

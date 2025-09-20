@@ -1,6 +1,7 @@
 use crate::ast::*;
 use crate::error::*;
 use gpui::*;
+use gpui_component::ActiveTheme;
 use super::{ElementRenderer, extract_text_content, default_text_color, muted_text_color, apply_text_styles};
 
 pub struct StrongElement;

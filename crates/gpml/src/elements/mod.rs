@@ -67,8 +67,8 @@ pub(crate) fn parse_color(color_str: &str) -> Option<Hsla> {
         "yellow" => Some(gpui::yellow()),
         "black" => Some(gpui::black()),
         "white" => Some(gpui::white()),
-        "gray" | "grey" => Some(gray(500)),
-        "transparent" => Some(transparent_black()),
+        "gray" | "grey" => Some(gpui::rgb(0x808080).into()),
+        "transparent" => Some(gpui::rgba(0x00000000).into()),
         _ => {
             if color_str.starts_with('#') {
                 let hex = &color_str[1..];
@@ -80,7 +80,7 @@ pub(crate) fn parse_color(color_str: &str) -> Option<Hsla> {
                     ) {
                         let a: u8 = 0xFF;
                         let hex_value = ((r as u32) << 24) | ((g as u32) << 16) | ((b as u32) << 8) | (a as u32);
-                        return Some(rgba(hex_value).into());
+                        return Some(gpui::rgba(hex_value).into());
                     }
                 } else if hex.len() == 8 {
                     if let (Ok(r), Ok(g), Ok(b), Ok(a)) = (
@@ -90,7 +90,7 @@ pub(crate) fn parse_color(color_str: &str) -> Option<Hsla> {
                         u8::from_str_radix(&hex[6..8], 16),
                     ) {
                         let hex_value = ((r as u32) << 24) | ((g as u32) << 16) | ((b as u32) << 8) | (a as u32);
-                        return Some(rgba(hex_value).into());
+                        return Some(gpui::rgba(hex_value).into());
                     }
                 }
             }

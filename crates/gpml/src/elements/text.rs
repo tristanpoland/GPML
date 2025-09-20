@@ -1,7 +1,8 @@
 use crate::ast::*;
 use crate::error::*;
 use gpui::*;
-use gpui_component::*;
+use gpui_component::ActiveTheme;
+use gpui_component::label;
 use super::{ElementRenderer, extract_text_content, default_text_color, apply_text_styles, parse_color};
 
 pub struct HeadingElement;

@@ -1,6 +1,7 @@
 use crate::ast::*;
 use crate::error::*;
 use gpui::*;
+use gpui_component::ActiveTheme;
 use super::{ElementRenderer, render_child, extract_text_content, muted_text_color};
 
 pub struct BlockquoteElement;

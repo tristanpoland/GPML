@@ -1,6 +1,8 @@
 use crate::ast::*;
 use crate::error::*;
 use gpui::*;
+use gpui_component::ActiveTheme;
+use gpui_component::{h_flex, v_flex};
 use super::{ElementRenderer, render_child, apply_common_styles, apply_flex_styles};
 
 pub struct DivElement;

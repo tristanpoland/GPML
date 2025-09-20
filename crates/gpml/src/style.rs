@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use gpui::*;
 use gpui_component::*;
 use crate::ast::GPMLElement;
+use crate::elements::parse_color;
 
 /// Lightweight style model parsed from inline `style` attribute.
 #[derive(Debug, Clone, Default)]
@@ -85,14 +86,14 @@ impl Style {
 
         // background / background-color
         if let Some(bg) = element.get_attribute("background") {
-            if let Some(color) = crate::renderer::GPMLRenderer::parse_color(&bg.as_string()) {
+            if let Some(color) = parse_color(&bg.as_string()) {
                 styled = styled.bg(color);
             }
         } else if let Some(s) = &style {
             if let Some(v) = s.get("background") {
-                if let Some(color) = crate::renderer::GPMLRenderer::parse_color(v) { styled = styled.bg(color); }
+                if let Some(color) = parse_color(v) { styled = styled.bg(color); }
             } else if let Some(v) = s.get("background-color") {
-                if let Some(color) = crate::renderer::GPMLRenderer::parse_color(v) { styled = styled.bg(color); }
+                if let Some(color) = parse_color(v) { styled = styled.bg(color); }
             }
         }
 
@@ -128,12 +129,12 @@ impl Style {
         }
 
         if let Some(color_attr) = element.get_attribute("color") {
-            if let Some(color) = crate::renderer::GPMLRenderer::parse_color(&color_attr.as_string()) {
+            if let Some(color) = parse_color(&color_attr.as_string()) {
                 text_el = text_el.text_color(color);
             }
         } else if let Some(s) = &style {
             if let Some(v) = s.get("color") {
-                if let Some(color) = crate::renderer::GPMLRenderer::parse_color(v) { text_el = text_el.text_color(color); }
+                if let Some(color) = parse_color(v) { text_el = text_el.text_color(color); }
             }
         }
 

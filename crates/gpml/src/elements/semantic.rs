@@ -1,6 +1,7 @@
 use crate::ast::*;
 use crate::error::*;
 use gpui::*;
+use gpui_component::ActiveTheme;
 use super::{ElementRenderer, render_child, apply_common_styles};
 
 pub struct ArticleElement;

@@ -1,6 +1,7 @@
 use crate::ast::*;
 use crate::error::*;
 use gpui::*;
+use gpui_component::v_flex;
 use super::{ElementRenderer, render_child, apply_common_styles, extract_text_content, default_text_color};
 
 pub struct FormElement;

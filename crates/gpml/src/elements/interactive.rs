@@ -1,7 +1,7 @@
 use crate::ast::*;
 use crate::error::*;
 use gpui::*;
-use gpui_component::*;
+use gpui_component::{h_flex, button, checkbox, radio, switch, label};
 use super::{ElementRenderer, extract_text_content, default_text_color, muted_text_color};
 
 pub struct ButtonElement;

@@ -1,7 +1,9 @@
 use crate::ast::*;
 use crate::error::*;
 use gpui::*;
-use super::{ElementRenderer, render_child, muted_text_color};
+use gpui_component::ActiveTheme;
+use gpui_component::{h_flex, v_flex};
+use super::{ElementRenderer, render_child, muted_text_color, default_text_color, extract_text_content};
 
 pub struct UlElement;
 pub struct OlElement;
@@ -96,10 +98,10 @@ impl ElementRenderer for DtElement {
     where
         T: 'static,
     {
-        let text_content = super::extract_text_content(element);
+        let text_content = extract_text_content(element);
         Ok(div()
             .font_weight(FontWeight::BOLD)
-            .text_color(super::default_text_color())
+            .text_color(default_text_color())
             .child(text_content)
             .into_any_element())
     }

@@ -1,7 +1,7 @@
 use crate::ast::*;
 use crate::error::*;
 use gpui::*;
-use gpui_component::{v_flex, h_flex};
+use gpui_component::{v_flex, h_flex, ActiveTheme};
 use super::{ElementRenderer, render_child, extract_text_content, default_text_color};
 
 pub struct TableElement;

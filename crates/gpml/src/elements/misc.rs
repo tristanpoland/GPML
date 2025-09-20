@@ -1,7 +1,7 @@
 use crate::ast::*;
 use crate::error::*;
 use gpui::*;
-use gpui_component::scroll::ScrollbarAxis;
+use gpui_component::{scroll::ScrollbarAxis, ActiveTheme, StyledExt};
 use super::{ElementRenderer, render_child, apply_common_styles};
 
 pub struct ModalElement;
